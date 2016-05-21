@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.aiwolf.client.base.player.AbstractRole;
 import org.aiwolf.client.lib.TemplateTalkFactory;
 import org.aiwolf.client.lib.TemplateWhisperFactory;
 import org.aiwolf.client.lib.Topic;
@@ -17,19 +16,19 @@ import org.aiwolf.common.data.Talk;
 import org.aiwolf.common.net.GameInfo;
 import org.aiwolf.common.net.GameSetting;
 
-public class ChofuWerewolf extends AbstractRole {
+public class ChofuWerewolf extends ChofuBaseRole {
 
-	public List<Agent> wolfs,alives,humans;
-	public List<Talk> talkList, todayTalkList, whisperList, todayWhisperList;
-	public Agent target, vote;
+	public List<Agent> wolfs,humans;
+	public List<Talk> whisperList, todayWhisperList;
+	public Agent target;
 
-	public boolean voteDeclareTalk,targetDeclareWhisper,voteDeclareWhisper;
+	public boolean targetDeclareWhisper,voteDeclareWhisper;
 
 
 	public ChofuWerewolf() {
+		super();
 		wolfs = new ArrayList<Agent>();
 		humans = new ArrayList<Agent>();
-		todayTalkList = new ArrayList<Talk>();
 		todayWhisperList = new ArrayList<Talk>();
 	}
 
@@ -59,9 +58,7 @@ public class ChofuWerewolf extends AbstractRole {
 
 	@Override
 	public void dayStart() {
-		todayTalkList.clear();
 		todayWhisperList.clear();
-		voteDeclareTalk = false;
 		targetDeclareWhisper = false;
 		voteDeclareWhisper = false;
 	}
@@ -71,21 +68,14 @@ public class ChofuWerewolf extends AbstractRole {
 
 		super.update(gameInfo);
 
-		for(Talk talk : gameInfo.getTalkList()){
-			if(talk.getDay() == this.getDay() && !(todayTalkList.contains(talk))){
-				todayTalkList.add(talk);
-			}
-		}
-
 		for(Talk talk : gameInfo.getWhisperList()){
-			if(talk.getDay() == this.getDay() && !(todayWhisperList.contains(talk))){
+			if(talk.getDay() == getDay() && !(todayWhisperList.contains(talk))){
 				todayWhisperList.add(talk);
 			}
 		}
 
 		talkList = gameInfo.getTalkList();
 		whisperList = gameInfo.getWhisperList();
-		alives = gameInfo.getAliveAgentList();
 
 	}
 
@@ -93,7 +83,6 @@ public class ChofuWerewolf extends AbstractRole {
 	public String whisper() {
 
 		if(!todayWhisperList.isEmpty()){
-			//譛ｬ譌･縺ｮ縺輔＆繧・″縺後≠繧・
 			List<Agent> targetList = new ArrayList<Agent>();
 			List<Agent> voteList = new ArrayList<Agent>();
 			for(Talk talk : todayWhisperList){
@@ -106,24 +95,18 @@ public class ChofuWerewolf extends AbstractRole {
 			}
 
 			if(!targetList.isEmpty()){
-				//繧ｿ繝ｼ繧ｲ繝・ヨ豎ｺ螳壹↓髢｢縺吶ｋ縺輔＆繧・″縺後≠縺｣縺溷ｴ蜷・
-				//繝ｩ繝ｳ繝繝豎ｺ螳夲ｼ郁ｦ∵隼蝟・ｼ・
 				Random rnd = new Random();
 				target = targetList.get(rnd.nextInt(targetList.size()));
 				if(!targetDeclareWhisper){
-					//縺輔＆繧・″縺ｧ縺ｮ謾ｻ謦・ｮ｣險繧偵∪縺縺励※縺・↑縺・
 					targetDeclareWhisper = true;
 					return TemplateWhisperFactory.attack(target);
 				}
 			}
 
 			if(!voteList.isEmpty()){
-				//謚慕･ｨ豎ｺ螳壹↓髢｢縺吶ｋ縺輔＆繧・″縺後≠縺｣縺溷ｴ蜷・
-				//繝ｩ繝ｳ繝繝豎ｺ螳夲ｼ郁ｦ∵隼蝟・ｼ・
 				Random rnd = new Random();
 				vote = voteList.get(rnd.nextInt(voteList.size()));
 				if(!voteDeclareWhisper){
-					//縺輔＆繧・″縺ｧ縺ｮ謚慕･ｨ螳｣險繧偵∪縺縺励※縺・↑縺・
 					voteDeclareWhisper = true;
 					return TemplateWhisperFactory.vote(vote);
 				}
@@ -132,9 +115,6 @@ public class ChofuWerewolf extends AbstractRole {
 		}
 
 		if(!targetDeclareWhisper){
-			//縺ｾ縺謾ｻ謦・ｮ｣險繧偵＠縺ｦ縺・↑縺・・謾ｻ謦・岼讓吶ｒ豎ｺ繧√ｋ
-
-			//逕溘″縺ｦ縺・ｋ莠ｺ髢薙・驟榊・繧剃ｽ懈・
 			List<Agent> aliveHumans = new ArrayList<Agent>();
 			for(Agent agent : humans){
 				if(alives.contains(agent)){
@@ -142,7 +122,6 @@ public class ChofuWerewolf extends AbstractRole {
 				}
 			}
 
-			//驕主悉縺ｫCO繧偵＠縺ｦ縺・ｋ縺九・
 			Map<Agent,Role> coMap = new HashMap<Agent, Role>();
 			for(Agent agent : alives){
 				for(Talk talk : talkList){
@@ -157,7 +136,6 @@ public class ChofuWerewolf extends AbstractRole {
 
 			List<Agent> targetList = new ArrayList<Agent>();
 			if(!coMap.isEmpty()){
-				//繧ｫ繝溘Φ繧ｰ繧｢繧ｦ繝医′蟄伜惠縺吶ｋ譎ゅ・
 				for(Agent agent : coMap.keySet()){
 					if(coMap.get(agent).equals(Role.SEER)){
 						targetList.add(agent);
@@ -173,16 +151,12 @@ public class ChofuWerewolf extends AbstractRole {
 				targetDeclareWhisper = true;
 				return TemplateWhisperFactory.attack(target);
 			}
-			//譛蠕後・繝ｩ繝ｳ繝繝
 			targetDeclareWhisper = true;
 			target = aliveHumans.get(rnd.nextInt(aliveHumans.size()));
 			return TemplateWhisperFactory.attack(target);
 		}
 
 		if(!voteDeclareWhisper){
-			//縺ｾ縺謚慕･ｨ螳｣險繧偵＠縺ｦ縺・↑縺・・謚慕･ｨ逶ｮ讓吶ｒ豎ｺ繧√ｋ
-
-			//逕溘″縺ｦ縺・ｋ莠ｺ髢薙・驟榊・繧剃ｽ懈・
 			List<Agent> aliveHumans = new ArrayList<Agent>();
 			for(Agent agent : humans){
 				if(alives.contains(agent)){
@@ -190,7 +164,6 @@ public class ChofuWerewolf extends AbstractRole {
 				}
 			}
 
-			//莉頑律縺ｮ逋ｺ險縺ｧ諤ｪ縺励∪繧後※縺・ｋ莠ｺ縺後＞繧後・
 			Map<Agent,Integer> voteMap = new HashMap<Agent, Integer>();
 			for(Talk talk : talkList){
 				Utterance utterance = new Utterance(talk.getContent());
@@ -208,7 +181,6 @@ public class ChofuWerewolf extends AbstractRole {
 			}
 
 			if(!voteMap.isEmpty()){
-				//諤ｪ縺励∪繧後※縺・ｋ莠ｺ縺悟ｭ伜惠縺吶ｋ譎ゅ・
 				Agent maxAgent = null;
 				int maxInt = 0;
 				for(Agent agent : voteMap.keySet()){
@@ -239,9 +211,6 @@ public class ChofuWerewolf extends AbstractRole {
 
 		if(!voteDeclareTalk){
 
-			//縺ｾ縺謚慕･ｨ螳｣險繧偵＠縺ｦ縺・↑縺・・謚慕･ｨ逶ｮ讓吶ｒ豎ｺ繧√ｋ
-
-			//逕溘″縺ｦ縺・ｋ莠ｺ髢薙・驟榊・繧剃ｽ懈・
 			List<Agent> aliveHumans = new ArrayList<Agent>();
 			for(Agent agent : humans){
 				if(alives.contains(agent)){
@@ -249,7 +218,6 @@ public class ChofuWerewolf extends AbstractRole {
 				}
 			}
 
-			//莉頑律縺ｮ逋ｺ險縺ｧ諤ｪ縺励∪繧後※縺・ｋ莠ｺ縺後＞繧後・
 			Map<Agent,Integer> targetMap = new HashMap<Agent, Integer>();
 			for(Agent agent : alives){
 				for(Talk talk : talkList){
@@ -271,7 +239,6 @@ public class ChofuWerewolf extends AbstractRole {
 			}
 
 			if(!targetMap.isEmpty()){
-				//諤ｪ縺励∪繧後※縺・ｋ莠ｺ縺悟ｭ伜惠縺吶ｋ譎ゅ・
 				Agent maxAgent = null;
 				int maxInt = 0;
 				for(Agent agent : targetMap.keySet()){
@@ -285,7 +252,6 @@ public class ChofuWerewolf extends AbstractRole {
 					return TemplateTalkFactory.vote(vote);
 				}
 			}
-
 
 			Random rnd = new Random();
 			vote = aliveHumans.get(rnd.nextInt(aliveHumans.size()));
