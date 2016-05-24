@@ -74,9 +74,6 @@ public class ChofuWerewolf extends ChofuBaseRole {
 			}
 		}
 
-		talkList = gameInfo.getTalkList();
-		whisperList = gameInfo.getWhisperList();
-
 	}
 
 	@Override
@@ -190,14 +187,12 @@ public class ChofuWerewolf extends ChofuBaseRole {
 				}
 				if(maxAgent != null){
 					vote = maxAgent;
-					voteDeclareWhisper = true;
 					return TemplateWhisperFactory.vote(vote);
 				}
 			}
 
 			Random rnd = new Random();
 			vote = aliveHumans.get(rnd.nextInt(aliveHumans.size()));
-			voteDeclareWhisper =true;
 			return TemplateWhisperFactory.vote(vote);
 
 		}
@@ -209,55 +204,8 @@ public class ChofuWerewolf extends ChofuBaseRole {
 	@Override
 	public String talk() {
 
-		if(!voteDeclareTalk){
-
-			List<Agent> aliveHumans = new ArrayList<Agent>();
-			for(Agent agent : humans){
-				if(alives.contains(agent)){
-					aliveHumans.add(agent);
-				}
-			}
-
-			Map<Agent,Integer> targetMap = new HashMap<Agent, Integer>();
-			for(Agent agent : alives){
-				for(Talk talk : talkList){
-					if(talk.getAgent().equals(agent)){
-						Utterance utterance = new Utterance(talk.getContent());
-						if(utterance.getTopic().equals(Topic.VOTE)){
-							if(!wolfs.contains(utterance.getTarget())){
-								if(targetMap.containsKey(utterance.getTarget())){
-									int a = targetMap.get(utterance.getTarget());
-									a++;
-									targetMap.put(utterance.getTarget(), a);
-								}else{
-									targetMap.put(utterance.getTarget(), 1);
-								}
-							}
-						}
-					}
-				}
-			}
-
-			if(!targetMap.isEmpty()){
-				Agent maxAgent = null;
-				int maxInt = 0;
-				for(Agent agent : targetMap.keySet()){
-					if(targetMap.get(agent) > maxInt){
-						maxAgent = agent;
-					}
-				}
-				if(maxAgent != null){
-					vote = maxAgent;
-					voteDeclareTalk = true;
-					return TemplateTalkFactory.vote(vote);
-				}
-			}
-
-			Random rnd = new Random();
-			vote = aliveHumans.get(rnd.nextInt(aliveHumans.size()));
-			voteDeclareTalk = true;
-			return TemplateTalkFactory.vote(vote);
-
+		if(!isMyTalkOneBefore()){
+			return getRandomVoteTalk();
 		}
 
 		return TemplateTalkFactory.over();
@@ -285,6 +233,19 @@ public class ChofuWerewolf extends ChofuBaseRole {
 
 	@Override
 	public void finish() {
+
+	}
+
+	@Override
+	public String getRandomVoteTalk(){
+
+		Random rnd = new Random();
+
+		if(!voteTargets.isEmpty()){
+			return TemplateTalkFactory.vote(voteTargets.get(rnd.nextInt(voteTargets.size())));
+		}
+
+		return TemplateTalkFactory.vote(humans.get(rnd.nextInt(humans.size())));
 
 	}
 
