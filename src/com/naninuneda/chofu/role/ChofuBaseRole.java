@@ -2,7 +2,6 @@ package com.naninuneda.chofu.role;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import org.aiwolf.client.base.player.AbstractRole;
@@ -18,7 +17,6 @@ public abstract class ChofuBaseRole extends AbstractRole {
 
 	public List<Agent> alives;
 	public List<Talk> talkList, todayTalkList;
-	public Agent vote;
 	public List<Agent> voteTargets;
 
 	public ChofuBaseRole(){
@@ -46,6 +44,8 @@ public abstract class ChofuBaseRole extends AbstractRole {
 
 		super.update(gameInfo);
 
+		alives = gameInfo.getAliveAgentList();
+
 		for(Talk talk : gameInfo.getTalkList()){
 			if(talk.getDay() == getDay() && !(todayTalkList.contains(talk))){
 				todayTalkList.add(talk);
@@ -55,21 +55,11 @@ public abstract class ChofuBaseRole extends AbstractRole {
 		for(Talk talk:todayTalkList){
 			Utterance utterance = new Utterance(talk.getContent());
 			if(utterance.getTopic().equals(Topic.VOTE)){
-				voteTargets.add(utterance.getTarget());
+				if(!utterance.getTarget().equals(getMe()) && alives.contains(utterance.getTarget())){
+					voteTargets.add(utterance.getTarget());
+				}
 			}
 		}
-
-	}
-
-	public String getRandomVoteTalk(){
-
-		Random rnd = new Random();
-
-		if(!voteTargets.isEmpty()){
-			return TemplateTalkFactory.vote(voteTargets.get(rnd.nextInt(voteTargets.size())));
-		}
-
-		return TemplateTalkFactory.vote(alives.get(rnd.nextInt(alives.size())));
 
 	}
 
@@ -84,6 +74,22 @@ public abstract class ChofuBaseRole extends AbstractRole {
 		}
 
 		return false;
+
+	}
+
+	public Agent getRandomVote() {
+		Random rnd = new Random();
+
+		if(!voteTargets.isEmpty()){
+			return voteTargets.get(rnd.nextInt(voteTargets.size()));
+		}
+
+		return alives.get(rnd.nextInt(alives.size()));
+	}
+
+	public String getRandomVoteTalk(){
+
+		return TemplateTalkFactory.vote(getRandomVote());
 
 	}
 

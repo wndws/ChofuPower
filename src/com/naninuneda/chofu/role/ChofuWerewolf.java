@@ -20,9 +20,9 @@ public class ChofuWerewolf extends ChofuBaseRole {
 
 	public List<Agent> wolfs,humans;
 	public List<Talk> whisperList, todayWhisperList;
-	public Agent target;
+	public Agent attack;
 
-	public boolean targetDeclareWhisper,voteDeclareWhisper;
+	public boolean targetDeclareWhisper;
 
 
 	public ChofuWerewolf() {
@@ -52,15 +52,14 @@ public class ChofuWerewolf extends ChofuBaseRole {
 			}
 		}
 
-		talkList = gameInfo.getTalkList();
 		whisperList = gameInfo.getWhisperList();
 	}
 
 	@Override
 	public void dayStart() {
+		super.dayStart();
 		todayWhisperList.clear();
 		targetDeclareWhisper = false;
-		voteDeclareWhisper = false;
 	}
 
 	@Override
@@ -93,19 +92,10 @@ public class ChofuWerewolf extends ChofuBaseRole {
 
 			if(!targetList.isEmpty()){
 				Random rnd = new Random();
-				target = targetList.get(rnd.nextInt(targetList.size()));
+				attack = targetList.get(rnd.nextInt(targetList.size()));
 				if(!targetDeclareWhisper){
 					targetDeclareWhisper = true;
-					return TemplateWhisperFactory.attack(target);
-				}
-			}
-
-			if(!voteList.isEmpty()){
-				Random rnd = new Random();
-				vote = voteList.get(rnd.nextInt(voteList.size()));
-				if(!voteDeclareWhisper){
-					voteDeclareWhisper = true;
-					return TemplateWhisperFactory.vote(vote);
+					return TemplateWhisperFactory.attack(attack);
 				}
 			}
 
@@ -144,57 +134,13 @@ public class ChofuWerewolf extends ChofuBaseRole {
 
 			Random rnd = new Random();
 			if(!targetList.isEmpty()){
-				target = targetList.get(rnd.nextInt(targetList.size()));
+				attack = targetList.get(rnd.nextInt(targetList.size()));
 				targetDeclareWhisper = true;
-				return TemplateWhisperFactory.attack(target);
+				return TemplateWhisperFactory.attack(attack);
 			}
 			targetDeclareWhisper = true;
-			target = aliveHumans.get(rnd.nextInt(aliveHumans.size()));
-			return TemplateWhisperFactory.attack(target);
-		}
-
-		if(!voteDeclareWhisper){
-			List<Agent> aliveHumans = new ArrayList<Agent>();
-			for(Agent agent : humans){
-				if(alives.contains(agent)){
-					aliveHumans.add(agent);
-				}
-			}
-
-			Map<Agent,Integer> voteMap = new HashMap<Agent, Integer>();
-			for(Talk talk : talkList){
-				Utterance utterance = new Utterance(talk.getContent());
-				if(utterance.getTopic().equals(Topic.VOTE)){
-					if(!wolfs.contains(utterance.getTarget())){
-						if(voteMap.containsKey(utterance.getTarget())){
-							int a = voteMap.get(utterance.getTarget());
-							a++;
-							voteMap.put(utterance.getTarget(), a);
-						}else{
-							voteMap.put(utterance.getTarget(), 1);
-						}
-					}
-				}
-			}
-
-			if(!voteMap.isEmpty()){
-				Agent maxAgent = null;
-				int maxInt = 0;
-				for(Agent agent : voteMap.keySet()){
-					if(voteMap.get(agent) > maxInt){
-						maxAgent = agent;
-					}
-				}
-				if(maxAgent != null){
-					vote = maxAgent;
-					return TemplateWhisperFactory.vote(vote);
-				}
-			}
-
-			Random rnd = new Random();
-			vote = aliveHumans.get(rnd.nextInt(aliveHumans.size()));
-			return TemplateWhisperFactory.vote(vote);
-
+			attack = aliveHumans.get(rnd.nextInt(aliveHumans.size()));
+			return TemplateWhisperFactory.attack(attack);
 		}
 
 		return TemplateWhisperFactory.over();
@@ -213,7 +159,7 @@ public class ChofuWerewolf extends ChofuBaseRole {
 
 	@Override
 	public Agent attack() {
-		return target;
+		return attack;
 	}
 
 	@Override
@@ -228,7 +174,7 @@ public class ChofuWerewolf extends ChofuBaseRole {
 
 	@Override
 	public Agent vote() {
-		return vote;
+		return getRandomVote();
 	}
 
 	@Override
@@ -238,14 +184,26 @@ public class ChofuWerewolf extends ChofuBaseRole {
 
 	@Override
 	public String getRandomVoteTalk(){
+		return TemplateTalkFactory.vote(getRandomVote());
+	}
+
+	@Override
+	public Agent getRandomVote(){
 
 		Random rnd = new Random();
 
 		if(!voteTargets.isEmpty()){
-			return TemplateTalkFactory.vote(voteTargets.get(rnd.nextInt(voteTargets.size())));
+			return voteTargets.get(rnd.nextInt(voteTargets.size()));
 		}
 
-		return TemplateTalkFactory.vote(humans.get(rnd.nextInt(humans.size())));
+		List<Agent> aliveHumans = new ArrayList<Agent>();
+		for(Agent agent : humans){
+			if(alives.contains(agent)){
+				aliveHumans.add(agent);
+			}
+		}
+
+		return aliveHumans.get(rnd.nextInt(aliveHumans.size()));
 
 	}
 
