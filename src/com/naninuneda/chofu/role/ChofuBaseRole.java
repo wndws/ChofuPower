@@ -18,10 +18,12 @@ public abstract class ChofuBaseRole extends AbstractRole {
 	public List<Agent> alives;
 	public List<Talk> talkList, todayTalkList;
 	public List<Agent> voteTargets;
+	public Random random;
 
 	public ChofuBaseRole(){
 		todayTalkList = new ArrayList<Talk>();
 		voteTargets = new ArrayList<Agent>();
+		random = new Random();
 	}
 
 	@Override
@@ -77,19 +79,18 @@ public abstract class ChofuBaseRole extends AbstractRole {
 
 	}
 
-	public Agent getRandomVote() {
-		Random rnd = new Random();
+	public Agent getRandomVoteTarget() {
 
 		if(!voteTargets.isEmpty()){
-			return voteTargets.get(rnd.nextInt(voteTargets.size()));
+			return voteTargets.get(random.nextInt(voteTargets.size()));
 		}
 
-		return alives.get(rnd.nextInt(alives.size()));
+		return alives.get(random.nextInt(alives.size()));
 	}
 
 	public String getRandomVoteTalk(){
 
-		return TemplateTalkFactory.vote(getRandomVote());
+		return TemplateTalkFactory.vote(getRandomVoteTarget());
 
 	}
 

@@ -18,7 +18,7 @@ import org.aiwolf.common.net.GameSetting;
 
 public class ChofuWerewolf extends ChofuBaseRole {
 
-	public List<Agent> wolfs,humans;
+	public List<Agent> wolfs,humans,aliveHumans;
 	public List<Talk> whisperList, todayWhisperList;
 	public Agent attack;
 
@@ -29,7 +29,9 @@ public class ChofuWerewolf extends ChofuBaseRole {
 		super();
 		wolfs = new ArrayList<Agent>();
 		humans = new ArrayList<Agent>();
+		aliveHumans = new ArrayList<Agent>();
 		todayWhisperList = new ArrayList<Talk>();
+
 	}
 
 	@Override
@@ -60,6 +62,7 @@ public class ChofuWerewolf extends ChofuBaseRole {
 		super.dayStart();
 		todayWhisperList.clear();
 		targetDeclareWhisper = false;
+		aliveHumans.clear();
 	}
 
 	@Override
@@ -73,73 +76,19 @@ public class ChofuWerewolf extends ChofuBaseRole {
 			}
 		}
 
+		for(Agent agent : humans){
+			if(alives.contains(agent)){
+				aliveHumans.add(agent);
+			}
+		}
+
 	}
 
 	@Override
 	public String whisper() {
 
-		if(!todayWhisperList.isEmpty()){
-			List<Agent> targetList = new ArrayList<Agent>();
-			List<Agent> voteList = new ArrayList<Agent>();
-			for(Talk talk : todayWhisperList){
-				Utterance utterance = new Utterance(talk.getContent());
-				if(utterance.getTopic().equals(Topic.ATTACK)){
-					targetList.add(utterance.getTarget());
-				}else if(utterance.getTopic().equals(Topic.VOTE)){
-					voteList.add(utterance.getTarget());
-				}
-			}
-
-			if(!targetList.isEmpty()){
-				Random rnd = new Random();
-				attack = targetList.get(rnd.nextInt(targetList.size()));
-				if(!targetDeclareWhisper){
-					targetDeclareWhisper = true;
-					return TemplateWhisperFactory.attack(attack);
-				}
-			}
-
-		}
-
-		if(!targetDeclareWhisper){
-			List<Agent> aliveHumans = new ArrayList<Agent>();
-			for(Agent agent : humans){
-				if(alives.contains(agent)){
-					aliveHumans.add(agent);
-				}
-			}
-
-			Map<Agent,Role> coMap = new HashMap<Agent, Role>();
-			for(Agent agent : alives){
-				for(Talk talk : talkList){
-					if(talk.getAgent().equals(agent)){
-						Utterance utterance = new Utterance(talk.getContent());
-						if(utterance.getTopic().equals(Topic.COMINGOUT)){
-							coMap.put(agent, utterance.getRole());
-						}
-					}
-				}
-			}
-
-			List<Agent> targetList = new ArrayList<Agent>();
-			if(!coMap.isEmpty()){
-				for(Agent agent : coMap.keySet()){
-					if(coMap.get(agent).equals(Role.SEER)){
-						targetList.add(agent);
-					}else if(coMap.get(agent).equals(Role.POSSESSED)){
-						targetList.add(agent);
-					}
-				}
-			}
-
-			Random rnd = new Random();
-			if(!targetList.isEmpty()){
-				attack = targetList.get(rnd.nextInt(targetList.size()));
-				targetDeclareWhisper = true;
-				return TemplateWhisperFactory.attack(attack);
-			}
-			targetDeclareWhisper = true;
-			attack = aliveHumans.get(rnd.nextInt(aliveHumans.size()));
+		if(!isMyWhisperOneBefore()){
+			attack = getRandomAttackTarget();
 			return TemplateWhisperFactory.attack(attack);
 		}
 
@@ -174,7 +123,7 @@ public class ChofuWerewolf extends ChofuBaseRole {
 
 	@Override
 	public Agent vote() {
-		return getRandomVote();
+		return getRandomVoteTarget();
 	}
 
 	@Override
@@ -182,28 +131,80 @@ public class ChofuWerewolf extends ChofuBaseRole {
 
 	}
 
-	@Override
-	public String getRandomVoteTalk(){
-		return TemplateTalkFactory.vote(getRandomVote());
+	public boolean isMyWhisperOneBefore(){
+
+		if(todayWhisperList.isEmpty()){
+			return false;
+		}
+
+		if(todayWhisperList.get(todayWhisperList.size() - 1).getAgent().equals(getMe())){
+			return true;
+		}
+
+		return false;
+
 	}
 
 	@Override
-	public Agent getRandomVote(){
+	public String getRandomVoteTalk(){
+		return TemplateTalkFactory.vote(getRandomVoteTarget());
+	}
 
-		Random rnd = new Random();
+	@Override
+	public Agent getRandomVoteTarget(){
 
 		if(!voteTargets.isEmpty()){
-			return voteTargets.get(rnd.nextInt(voteTargets.size()));
+			return voteTargets.get(random.nextInt(voteTargets.size()));
 		}
 
-		List<Agent> aliveHumans = new ArrayList<Agent>();
-		for(Agent agent : humans){
-			if(alives.contains(agent)){
-				aliveHumans.add(agent);
+		return aliveHumans.get(random.nextInt(aliveHumans.size()));
+
+	}
+
+	public Agent getRandomAttackTarget(){
+
+		List<Agent> targetList = new ArrayList<Agent>();
+
+		if(!todayWhisperList.isEmpty()){
+			for(Talk talk : todayWhisperList){
+				Utterance utterance = new Utterance(talk.getContent());
+				if(utterance.getTopic().equals(Topic.ATTACK)){
+					targetList.add(utterance.getTarget());
+				}
 			}
 		}
 
-		return aliveHumans.get(rnd.nextInt(aliveHumans.size()));
+		if(!targetList.isEmpty()){
+			return targetList.get(random.nextInt(targetList.size()));
+		}
+
+		Map<Agent,Role> coMap = new HashMap<Agent, Role>();
+		for(Agent agent : alives){
+			for(Talk talk : talkList){
+				if(talk.getAgent().equals(agent)){
+					Utterance utterance = new Utterance(talk.getContent());
+					if(utterance.getTopic().equals(Topic.COMINGOUT)){
+						coMap.put(agent, utterance.getRole());
+					}
+				}
+			}
+		}
+
+		if(!coMap.isEmpty()){
+			for(Agent agent : coMap.keySet()){
+				if(coMap.get(agent).equals(Role.SEER)){
+					targetList.add(agent);
+				}else if(coMap.get(agent).equals(Role.POSSESSED)){
+					targetList.add(agent);
+				}
+			}
+		}
+
+		if(!targetList.isEmpty()){
+			return targetList.get(random.nextInt(targetList.size()));
+		}
+
+		return aliveHumans.get(random.nextInt(aliveHumans.size()));
 
 	}
 

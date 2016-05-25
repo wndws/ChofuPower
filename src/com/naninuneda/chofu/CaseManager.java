@@ -56,12 +56,22 @@ public class CaseManager {
 	}
 
 	/*
-	private List<Map<Agent,Role>> down(List<Map<Agent,Role>> ancestors){
-		for(Map<Agent,Role> map : ancestors){
+
+
+	private Map<Agent,Role> down(Map<Agent,Role> roleMap){
+
+		List<Role> ngRole = getAllRoles();
+
+		Map<Role, Integer> roleNumMap = new HashMap<Role, Integer>();
+
+		for(Agent agent : roleMap.keySet()){
 
 		}
+
 	}
+
 	*/
+
 
 
 
