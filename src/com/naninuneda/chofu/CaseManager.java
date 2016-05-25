@@ -15,43 +15,44 @@ import org.aiwolf.common.net.GameSetting;
 public class CaseManager {
 
 	private Map<Role,Integer> roleNumMap;
-	private Map<Agent,List<Role>> possibilitys;
+	private Map<Agent,List<Role>> possibilities;
+	private Role myRole;
 
 	public CaseManager(GameInfo gameInfo, GameSetting gameSetting){
 		roleNumMap = gameSetting.getRoleNumMap();
-		possibilitys = new TreeMap<Agent,List<Role>>();
-		if(gameInfo.getRole().equals(Role.WEREWOLF)){
-			List<Agent> friends = new ArrayList<Agent>();
-			for(Agent agent : gameInfo.getRoleMap().keySet()){
-				if(gameInfo.getRoleMap().get(agent).equals(Role.WEREWOLF)){
-					friends.add(agent);
+		possibilities = new TreeMap<Agent,List<Role>>();
+		myRole = gameInfo.getRole();
+
+		if(myRole.equals(Role.WEREWOLF)){
+
+			List<Agent> friend = new ArrayList<Agent>();
+			Map<Agent,Role> roleMap = gameInfo.getRoleMap();
+			for(Agent agent : gameInfo.getAgentList()){
+				if(roleMap.containsKey(agent)){
+					if(roleMap.get(agent).equals(Role.WEREWOLF)){
+						friend.add(agent);
+					}
 				}
 			}
-			for(Agent agent: gameInfo.getAgentList()){
-				if(agent.equals(gameInfo.getAgent())){
-					List<Role> roles = new ArrayList<Role>();
+
+			for(Agent agent : gameInfo.getAgentList()){
+				List<Role> roles = new LinkedList<Role>();
+				if(friend.contains(agent)){
 					roles.add(Role.WEREWOLF);
-					possibilitys.put(agent, roles);
-					continue;
+				}else{
+					roles.addAll(getAllHumanRolesExceptMyRole());
 				}
-				if(friends.contains(agent)){
-					List<Role> roles = new ArrayList<Role>();
-					roles.add(Role.WEREWOLF);
-					possibilitys.put(agent, roles);
-					continue;
-				}
-				possibilitys.put(agent, getAllHumanRoles());
+				possibilities.put(agent, roles);
 			}
+
 		}else{
-			for(Agent agent: gameInfo.getAgentList()){
-				if(agent.equals(gameInfo.getAgent())){
-					List<Role> roles = new ArrayList<Role>();
-					roles.add(gameInfo.getRole());
-					possibilitys.put(agent, roles);
-					continue;
-				}
-				possibilitys.put(agent, getAllRoles());
+
+			for(Agent agent : gameInfo.getAgentList()){
+				List<Role> roles = new LinkedList<Role>();
+				roles.addAll(getAllHumanRolesExceptMyRole());
+				possibilities.put(agent, roles);
 			}
+
 		}
 	}
 
@@ -75,24 +76,44 @@ public class CaseManager {
 
 
 
-	private static List<Role> getAllHumanRoles(){
-		List<Role> roles = new ArrayList<Role>();
-		roles.add(Role.BODYGUARD);
-		roles.add(Role.MEDIUM);
-		roles.add(Role.POSSESSED);
-		roles.add(Role.VILLAGER);
-		roles.add(Role.SEER);
+	private List<Role> getAllHumanRoles(){
+		List<Role> roles = getAllRoles();
+		if(roles.contains(Role.WEREWOLF)){
+			roles.remove(Role.WEREWOLF);
+		}
 		return roles;
 	}
 
-	private static List<Role> getAllRoles(){
-		List<Role> roles = new ArrayList<Role>();
-		roles.add(Role.BODYGUARD);
-		roles.add(Role.MEDIUM);
-		roles.add(Role.POSSESSED);
-		roles.add(Role.VILLAGER);
-		roles.add(Role.SEER);
-		roles.add(Role.WEREWOLF);
+	private List<Role> getAllRoles(){
+		List<Role> roles = new LinkedList<Role>();
+		for(Role role : roleNumMap.keySet()){
+			if(roleNumMap.get(role) > 0){
+				roles.add(role);
+			}
+		}
+		return roles;
+	}
+
+	private List<Role> getAllHumanRolesExceptMyRole(){
+		List<Role> roles = getAllRolesExceptMyRole();
+		if(roles.contains(Role.WEREWOLF)){
+			roles.remove(Role.WEREWOLF);
+		}
+		return roles;
+	}
+
+	private List<Role> getAllRolesExceptMyRole(){
+		List<Role> roles = new LinkedList<Role>();
+		Map<Role,Integer> map = new HashMap<Role,Integer>(roleNumMap);
+		for(Role role : map.keySet()){
+			if(role.equals(myRole)){
+				int num = map.get(role);
+				map.put(role, num - 1);
+			}
+			if(map.get(role) > 0){
+				roles.add(role);
+			}
+		}
 		return roles;
 	}
 

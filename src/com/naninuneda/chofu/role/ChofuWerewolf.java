@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import org.aiwolf.client.lib.TemplateTalkFactory;
 import org.aiwolf.client.lib.TemplateWhisperFactory;
@@ -88,8 +87,10 @@ public class ChofuWerewolf extends ChofuBaseRole {
 	public String whisper() {
 
 		if(!isMyWhisperOneBefore()){
-			attack = getRandomAttackTarget();
-			return TemplateWhisperFactory.attack(attack);
+			if(attack != getRandomAttackTarget()){
+				attack = getRandomAttackTarget();
+				return TemplateWhisperFactory.attack(attack);
+			}
 		}
 
 		return TemplateWhisperFactory.over();
@@ -99,7 +100,7 @@ public class ChofuWerewolf extends ChofuBaseRole {
 	@Override
 	public String talk() {
 
-		if(!isMyTalkOneBefore()){
+		if(!isMyTalkOneBefore() && !isLoquacity()){
 			return getRandomVoteTalk();
 		}
 

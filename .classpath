@@ -2,8 +2,20 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="aiwolf/aiwolf-client.jar"/>
-	<classpathentry kind="lib" path="aiwolf/aiwolf-common.jar"/>
-	<classpathentry kind="lib" path="aiwolf/aiwolf-server.jar"/>
+	<classpathentry kind="lib" path="aiwolf/aiwolf-client.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="http://aiwolf.org/project/0.3.4/docs/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="aiwolf/aiwolf-common.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="http://aiwolf.org/project/0.3.4/docs/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="aiwolf/aiwolf-server.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="http://aiwolf.org/project/0.3.4/docs/"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
