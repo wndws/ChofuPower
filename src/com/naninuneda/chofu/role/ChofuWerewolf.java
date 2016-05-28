@@ -15,11 +15,15 @@ import org.aiwolf.common.data.Talk;
 import org.aiwolf.common.net.GameInfo;
 import org.aiwolf.common.net.GameSetting;
 
+import com.naninuneda.chofu.HistoryManager;
+
 public class ChofuWerewolf extends ChofuBaseRole {
 
 	public List<Agent> wolfs,humans,aliveHumans;
 	public List<Talk> whisperList, todayWhisperList;
 	public Agent attack;
+
+
 
 	public boolean targetDeclareWhisper;
 
@@ -35,9 +39,7 @@ public class ChofuWerewolf extends ChofuBaseRole {
 
 	@Override
 	public void initialize(GameInfo gameInfo,GameSetting gameSetting){
-
 		super.initialize(gameInfo, gameSetting);
-
 		Map<Agent,Role> roleMap = gameInfo.getRoleMap();
 		for(Agent agent : gameInfo.getAgentList()){
 			if(roleMap.containsKey(agent)){
@@ -129,7 +131,7 @@ public class ChofuWerewolf extends ChofuBaseRole {
 
 	@Override
 	public void finish() {
-
+		super.finish();
 	}
 
 	public boolean isMyWhisperOneBefore(){

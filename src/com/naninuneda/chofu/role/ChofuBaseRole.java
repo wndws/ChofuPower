@@ -13,12 +13,16 @@ import org.aiwolf.common.data.Talk;
 import org.aiwolf.common.net.GameInfo;
 import org.aiwolf.common.net.GameSetting;
 
+import com.naninuneda.chofu.HistoryManager;
+
 public abstract class ChofuBaseRole extends AbstractRole {
 
 	public List<Agent> alives;
 	public List<Talk> talkList, todayTalkList;
 	public List<Agent> voteTargets;
 	public Random random;
+	public HistoryManager history;
+	public GameInfo gameInfo;
 
 	public ChofuBaseRole(){
 		todayTalkList = new ArrayList<Talk>();
@@ -28,9 +32,9 @@ public abstract class ChofuBaseRole extends AbstractRole {
 
 	@Override
 	public void initialize(GameInfo gameInfo,GameSetting gameSetting){
-
 		super.initialize(gameInfo, gameSetting);
-
+		this.gameInfo = gameInfo;
+		history = new HistoryManager(gameInfo,gameSetting);
 		talkList = gameInfo.getTalkList();
 		alives = gameInfo.getAliveAgentList();
 	}
@@ -63,6 +67,10 @@ public abstract class ChofuBaseRole extends AbstractRole {
 			}
 		}
 
+	}
+
+	public void finish() {
+		history.aggregate(gameInfo);
 	}
 
 	public boolean isMyTalkOneBefore(){

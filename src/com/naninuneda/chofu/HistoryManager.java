@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.aiwolf.common.data.Agent;
 import org.aiwolf.common.data.Role;
+import org.aiwolf.common.data.Status;
 import org.aiwolf.common.net.GameInfo;
 import org.aiwolf.common.net.GameSetting;
 
@@ -33,6 +34,7 @@ public class HistoryManager {
 		seerCount = new HashMap<Integer,Integer>();
 		selfishCountMap = new HashMap<Integer,Integer>();
 		voteCount = new HashMap<Integer,Integer>();
+		coCountMap = new HashMap<Integer,List<Role>>();
 
 		if(scoreMap.isEmpty()){
 			for(Agent agent:gameInfo.getAgentList()){
@@ -148,56 +150,63 @@ public class HistoryManager {
 
 	public void aggregate(GameInfo gameInfo){
 
-		Map<Agent,Role> lastRoleMap = gameInfo.getRoleMap();
+		Map<Agent,Role> lastRoleMap = new HashMap<Agent,Role>(gameInfo.getRoleMap());
+
+		lastRoleMap.remove(gameInfo.getAgent());
 
 		for(Agent agent : lastRoleMap.keySet()){
 
+			Role eachRole = lastRoleMap.get(agent);
 			int id = agent.getAgentIdx();
 
 			//seer
 			Map<Role,Float> roleMap = seerResultEffectivity.get(id);
 			float valueThisGame = (float) seerResultEffectCountMap.get(id) / seerCount.get(id);
-			if(roleMap.containsKey(lastRoleMap.get(agent))){
-				float valuePreviousGame = roleMap.get(lastRoleMap.get(agent));
+			if(roleMap.containsKey(eachRole)){
+				float valuePreviousGame = roleMap.get(eachRole);
 				float result = (valuePreviousGame * gameCount + valueThisGame) / gameCount + 1;
-				roleMap.put(lastRoleMap.get(agent), result);
+				roleMap.put(eachRole, result);
 			}else{
-				roleMap.put(lastRoleMap.get(agent), valueThisGame);
+				roleMap.put(eachRole, valueThisGame);
 			}
 
 			//selfish
 			roleMap = selfish.get(id);
 			valueThisGame = (float) selfishCountMap.get(id) / voteCount.get(id);
-			if(roleMap.containsKey(lastRoleMap.get(agent))){
-				float valuePreviousGame = roleMap.get(lastRoleMap.get(agent));
+			if(roleMap.containsKey(eachRole)){
+				float valuePreviousGame = roleMap.get(eachRole);
 				float result = (valuePreviousGame * gameCount + valueThisGame) / gameCount + 1;
-				roleMap.put(lastRoleMap.get(agent), result);
+				roleMap.put(eachRole, result);
 			}else{
-				roleMap.put(lastRoleMap.get(agent), valueThisGame);
+				roleMap.put(eachRole, valueThisGame);
 			}
 
 			//CO
-			Map<Role,Float> roleRoleMap = coProbability.get(id).get(lastRoleMap.get(agent));
+			Map<Role,Float> roleRoleMap = coProbability.get(id).get(eachRole);
 			for(Role role:coCountMap.get(id)){
 				if(roleRoleMap.containsKey(role)){
-					float valuePreviousGame = roleRoleMap.get(lastRoleMap.get(agent));
+					float valuePreviousGame = roleRoleMap.get(eachRole);
 					float result = (valuePreviousGame * gameCount + 1) / gameCount + 1;
-					roleRoleMap.put(lastRoleMap.get(agent), result);
+					roleRoleMap.put(eachRole, result);
 				}else{
-					roleRoleMap.put(lastRoleMap.get(agent), (float)1);
+					roleRoleMap.put(eachRole, (float)1);
 				}
 			}
 		}
 
-		boolean humanWin = true;;
-		for(Agent agent:gameInfo.getAliveAgentList()){
-			if(lastRoleMap.get(agent).equals(Role.WEREWOLF)){
+		boolean humanWin = true;
+		for(Agent agent:gameInfo.getRoleMap().keySet()){
+			if(gameInfo.getStatusMap().get(agent).equals(Status.ALIVE) &&
+					gameInfo.getRoleMap().get(agent).equals(Role.WEREWOLF)){
 				humanWin = false;
 				break;
 			}
 		}
 
 		for(Agent agent : lastRoleMap.keySet()){
+			if(agent.equals(gameInfo.getAgent())){
+				continue;
+			}
 			int score = scoreMap.get(agent.getAgentIdx());
 			if(lastRoleMap.get(agent).equals(Role.WEREWOLF)){
 				if(!humanWin){
