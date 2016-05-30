@@ -23,8 +23,6 @@ public class ChofuWerewolf extends ChofuBaseRole {
 	public List<Talk> whisperList, todayWhisperList;
 	public Agent attack;
 
-
-
 	public boolean targetDeclareWhisper;
 
 

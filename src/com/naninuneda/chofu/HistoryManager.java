@@ -208,7 +208,7 @@ public class HistoryManager {
 				continue;
 			}
 			int score = scoreMap.get(agent.getAgentIdx());
-			if(lastRoleMap.get(agent).equals(Role.WEREWOLF)){
+			if(lastRoleMap.get(agent).equals(Role.WEREWOLF) || lastRoleMap.get(agent).equals(Role.MEDIUM)){
 				if(!humanWin){
 					scoreMap.put(agent.getAgentIdx(), score + 1);
 				}
@@ -220,5 +220,10 @@ public class HistoryManager {
 		}
 
 		gameCount++;
+		System.out.println("\n");
+		System.out.println("[ChofuPower]gameCount:" + gameCount);
+		for(Integer integer : scoreMap.keySet()){
+			System.out.println("[ChofuPower]agent:" + integer +" score:" + scoreMap.get(integer));
+		}
 	}
 }
