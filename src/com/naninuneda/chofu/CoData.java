@@ -40,7 +40,5 @@ public class CoData {
 			}
 		}
 	}
-	
-	public Map<Role,Integer> 
 
 }
