@@ -70,7 +70,7 @@ public abstract class ChofuBaseRole extends AbstractRole {
 	}
 
 	public void finish() {
-		history.aggregate(gameInfo);
+		System.out.println("\nフィニッシュが呼ばれました\n");
 	}
 
 	public boolean isMyTalkOneBefore(){

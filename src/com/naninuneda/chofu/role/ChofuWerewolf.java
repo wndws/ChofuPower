@@ -15,8 +15,6 @@ import org.aiwolf.common.data.Talk;
 import org.aiwolf.common.net.GameInfo;
 import org.aiwolf.common.net.GameSetting;
 
-import com.naninuneda.chofu.HistoryManager;
-
 public class ChofuWerewolf extends ChofuBaseRole {
 
 	public List<Agent> wolfs,humans,aliveHumans;
