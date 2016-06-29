@@ -6,9 +6,11 @@ import org.aiwolf.common.net.GameSetting;
 public class HistoryManager {
 
 	private static int gameCount;
+	private static CoData co;
 
 	static{
-		gameCount = 1;
+		gameCount = 0;
+
 	}
 
 	public HistoryManager(GameInfo gameInfo, GameSetting gameSetting){

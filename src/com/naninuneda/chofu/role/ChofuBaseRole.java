@@ -23,6 +23,7 @@ public abstract class ChofuBaseRole extends AbstractRole {
 	public Random random;
 	public HistoryManager history;
 	public GameInfo gameInfo;
+	public int finishCount;
 
 	public ChofuBaseRole(){
 		todayTalkList = new ArrayList<Talk>();
@@ -37,6 +38,7 @@ public abstract class ChofuBaseRole extends AbstractRole {
 		history = new HistoryManager(gameInfo,gameSetting);
 		talkList = gameInfo.getTalkList();
 		alives = gameInfo.getAliveAgentList();
+		finishCount = 0;
 	}
 
 	@Override
@@ -70,7 +72,15 @@ public abstract class ChofuBaseRole extends AbstractRole {
 	}
 
 	public void finish() {
-		System.out.println("\nフィニッシュが呼ばれました\n");
+		finishCount++;
+		if(finishCount == 2){
+			realFinish();
+		}
+	}
+
+	private void realFinish(){
+		history.addGameCount();
+		System.out.println("\nゲームカウント" + history.getGameCount() + "\n");
 	}
 
 	public boolean isMyTalkOneBefore(){
