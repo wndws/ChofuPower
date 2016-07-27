@@ -14,7 +14,6 @@ public class ChofuPower extends AbstractRoleAssignPlayer{
 		//setBodyguardPlayer(new ChofuBodyguard(this));
 		setWerewolfPlayer(new ChofuWerewolf());
 		//setPossessedPlayer(new ChofuPossessed(this));
-
 	}
 
 

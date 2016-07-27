@@ -73,12 +73,9 @@ public abstract class ChofuBaseRole extends AbstractRole {
 
 	public void finish() {
 		finishCount++;
-		if(finishCount == 2){
-			realFinish();
+		if(finishCount > 1){
+			return;
 		}
-	}
-
-	private void realFinish(){
 		history.addGameCount();
 		System.out.println("\nゲームカウント" + history.getGameCount() + "\n");
 	}

@@ -26,5 +26,7 @@ public class HistoryManager {
 		gameCount = gameCount + 1;
 	}
 
+	public
+
 
 }
