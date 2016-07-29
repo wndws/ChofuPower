@@ -24,6 +24,7 @@ public abstract class ChofuBaseRole extends AbstractRole {
 	public HistoryManager history;
 	public GameInfo gameInfo;
 	public int finishCount;
+	public boolean co;
 
 	public ChofuBaseRole(){
 		todayTalkList = new ArrayList<Talk>();
@@ -39,6 +40,7 @@ public abstract class ChofuBaseRole extends AbstractRole {
 		talkList = gameInfo.getTalkList();
 		alives = gameInfo.getAliveAgentList();
 		finishCount = 0;
+		co = false;
 	}
 
 	@Override
@@ -109,7 +111,7 @@ public abstract class ChofuBaseRole extends AbstractRole {
 
 	}
 
-	public boolean isLoquacity(){
+	public boolean isMyLoquacity(){
 
 		List<Talk> myTalks = new ArrayList<Talk>();
 		for(Talk talk:todayTalkList){

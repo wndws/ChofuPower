@@ -11,23 +11,26 @@ import org.aiwolf.client.lib.Topic;
 import org.aiwolf.client.lib.Utterance;
 import org.aiwolf.common.data.Agent;
 import org.aiwolf.common.data.Role;
+import org.aiwolf.common.data.Species;
 import org.aiwolf.common.data.Talk;
 import org.aiwolf.common.net.GameInfo;
 import org.aiwolf.common.net.GameSetting;
 
+import com.naninuneda.chofu.ChofuPower;
+
 public class ChofuWerewolf extends ChofuBaseRole {
 
-	public List<Agent> wolfs,humans,aliveHumans;
+	public Map<Agent,Species> species;
+	public List<Agent> aliveHumans;
 	public List<Talk> whisperList, todayWhisperList;
 	public Agent attack;
 
 	public boolean targetDeclareWhisper;
 
 
-	public ChofuWerewolf() {
+	public ChofuWerewolf(ChofuPower chofuPower) {
 		super();
-		wolfs = new ArrayList<Agent>();
-		humans = new ArrayList<Agent>();
+		species = new HashMap<Agent,Species>();
 		aliveHumans = new ArrayList<Agent>();
 		todayWhisperList = new ArrayList<Talk>();
 
@@ -40,17 +43,12 @@ public class ChofuWerewolf extends ChofuBaseRole {
 		for(Agent agent : gameInfo.getAgentList()){
 			if(roleMap.containsKey(agent)){
 				if(roleMap.get(agent).equals(Role.WEREWOLF)){
-					wolfs.add(agent);
+					species.put(agent,Species.WEREWOLF);
+					continue;
 				}
 			}
+			species.put(agent,Species.HUMAN);
 		}
-
-		for(Agent agent : gameInfo.getAgentList()){
-			if(!wolfs.contains(agent)){
-				humans.add(agent);
-			}
-		}
-
 		whisperList = gameInfo.getWhisperList();
 	}
 
@@ -73,8 +71,8 @@ public class ChofuWerewolf extends ChofuBaseRole {
 			}
 		}
 
-		for(Agent agent : humans){
-			if(alives.contains(agent)){
+		for(Agent agent : species.keySet()){
+			if(alives.contains(agent) && species.get(agent).equals(Species.HUMAN)){
 				aliveHumans.add(agent);
 			}
 		}
@@ -98,7 +96,7 @@ public class ChofuWerewolf extends ChofuBaseRole {
 	@Override
 	public String talk() {
 
-		if(!isMyTalkOneBefore() && !isLoquacity()){
+		if(!isMyTalkOneBefore() && !isMyLoquacity()){
 			return getRandomVoteTalk();
 		}
 
