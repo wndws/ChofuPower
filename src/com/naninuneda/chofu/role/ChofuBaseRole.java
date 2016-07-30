@@ -1,7 +1,9 @@
 package com.naninuneda.chofu.role;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.aiwolf.client.base.player.AbstractRole;
@@ -13,18 +15,17 @@ import org.aiwolf.common.data.Talk;
 import org.aiwolf.common.net.GameInfo;
 import org.aiwolf.common.net.GameSetting;
 
-import com.naninuneda.chofu.HistoryManager;
-
 public abstract class ChofuBaseRole extends AbstractRole {
 
 	public List<Agent> alives;
 	public List<Talk> talkList, todayTalkList;
 	public List<Agent> voteTargets;
 	public Random random;
-	public HistoryManager history;
 	public GameInfo gameInfo;
+	public GameSetting gameSetting;
 	public int finishCount;
 	public boolean co;
+	public double entropy;
 
 	public ChofuBaseRole(){
 		todayTalkList = new ArrayList<Talk>();
@@ -36,11 +37,11 @@ public abstract class ChofuBaseRole extends AbstractRole {
 	public void initialize(GameInfo gameInfo,GameSetting gameSetting){
 		super.initialize(gameInfo, gameSetting);
 		this.gameInfo = gameInfo;
-		history = new HistoryManager(gameInfo,gameSetting);
-		talkList = gameInfo.getTalkList();
-		alives = gameInfo.getAliveAgentList();
-		finishCount = 0;
-		co = false;
+		this.gameSetting = gameSetting;
+		this.talkList = gameInfo.getTalkList();
+		this.alives = gameInfo.getAliveAgentList();
+		this.finishCount = 0;
+		this.co = false;
 	}
 
 	@Override
@@ -71,6 +72,28 @@ public abstract class ChofuBaseRole extends AbstractRole {
 			}
 		}
 
+		//疑惑先のエントロピーを求める
+		Map<Agent,Integer> doubt = new HashMap<Agent,Integer>();
+		for(Agent agent:gameInfo.getAgentList()){
+			doubt.put(agent, 0);
+		}
+		int allVoteNum = 0;
+		for(Talk talk:talkList){
+			Utterance utterance = new Utterance(talk.getContent());
+			if(utterance.getTopic().equals(Topic.ESTIMATE) || utterance.getTopic().equals(Topic.VOTE)){
+				int voteNum = doubt.get(utterance.getTarget());
+				doubt.put(utterance.getTarget(),voteNum + 1);
+				allVoteNum++;
+			}
+		}
+		entropy = 0.0;
+		if(allVoteNum != 0){
+			for(Agent agent:gameInfo.getAgentList()){
+				double p = (double)doubt.get(agent)/allVoteNum;
+				entropy = entropy - (p)*(Math.log(p)/Math.log(2.0));
+			}
+		}
+
 	}
 
 	public void finish() {
@@ -78,8 +101,6 @@ public abstract class ChofuBaseRole extends AbstractRole {
 		if(finishCount > 1){
 			return;
 		}
-		history.addGameCount();
-		System.out.println("\nゲームカウント" + history.getGameCount() + "\n");
 	}
 
 	public boolean isMyTalkOneBefore(){
