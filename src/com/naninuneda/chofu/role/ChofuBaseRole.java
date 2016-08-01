@@ -132,18 +132,18 @@ public abstract class ChofuBaseRole extends AbstractRole {
 
 	}
 
-	public boolean isMyLoquacity(){
+	public boolean isLoquacity(Agent agent){
 
-		List<Talk> myTalks = new ArrayList<Talk>();
+		List<Talk> talks = new ArrayList<Talk>();
 		for(Talk talk:todayTalkList){
-			if(talk.getAgent().equals(getMe())){
-				myTalks.add(talk);
+			if(talk.getAgent().equals(agent)){
+				talks.add(talk);
 			}
 		}
 
 		double talkPerPeople = (double) todayTalkList.size() / alives.size();
 
-		if(talkPerPeople >= myTalks.size()){
+		if(talkPerPeople >= talks.size()){
 			return false;
 		}else{
 			return true;

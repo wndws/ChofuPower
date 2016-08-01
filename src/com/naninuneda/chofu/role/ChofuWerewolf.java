@@ -33,7 +33,6 @@ public class ChofuWerewolf extends ChofuBaseRole {
 		species = new HashMap<Agent,Species>();
 		aliveHumans = new ArrayList<Agent>();
 		todayWhisperList = new ArrayList<Talk>();
-
 	}
 
 	@Override
@@ -96,7 +95,7 @@ public class ChofuWerewolf extends ChofuBaseRole {
 	@Override
 	public String talk() {
 
-		if(!isMyTalkOneBefore() && !isMyLoquacity()){
+		if(!isMyTalkOneBefore() && !isLoquacity(getMe())){
 			return getRandomVoteTalk();
 		}
 
