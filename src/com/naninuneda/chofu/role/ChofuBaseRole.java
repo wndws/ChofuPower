@@ -55,6 +55,8 @@ public abstract class ChofuBaseRole extends AbstractRole {
 
 		super.update(gameInfo);
 
+		this.gameInfo = gameInfo;
+
 		alives = gameInfo.getAliveAgentList();
 
 		for(Talk talk : gameInfo.getTalkList()){
@@ -143,7 +145,7 @@ public abstract class ChofuBaseRole extends AbstractRole {
 
 		double talkPerPeople = (double) todayTalkList.size() / alives.size();
 
-		if(talkPerPeople >= talks.size()){
+		if(talkPerPeople - 2 >= talks.size()){
 			return false;
 		}else{
 			return true;
