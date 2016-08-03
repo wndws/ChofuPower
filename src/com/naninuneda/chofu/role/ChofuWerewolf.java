@@ -95,10 +95,6 @@ public class ChofuWerewolf extends ChofuBaseRole {
 	@Override
 	public String talk() {
 
-		if(!isMyTalkOneBefore() && !isLoquacity(getMe())){
-			return getRandomVoteTalk();
-		}
-
 		return TemplateTalkFactory.over();
 	}
 
@@ -108,23 +104,13 @@ public class ChofuWerewolf extends ChofuBaseRole {
 	}
 
 	@Override
-	public Agent divine() {
-		return null;
-	}
-
-	@Override
 	public Agent guard() {
 		return null;
 	}
 
 	@Override
 	public Agent vote() {
-		return getRandomVoteTarget();
-	}
-
-	@Override
-	public void finish() {
-		super.finish();
+		return null;
 	}
 
 	public boolean isMyWhisperOneBefore(){
@@ -138,22 +124,6 @@ public class ChofuWerewolf extends ChofuBaseRole {
 		}
 
 		return false;
-
-	}
-
-	@Override
-	public String getRandomVoteTalk(){
-		return TemplateTalkFactory.vote(getRandomVoteTarget());
-	}
-
-	@Override
-	public Agent getRandomVoteTarget(){
-
-		if(!voteTargets.isEmpty()){
-			return voteTargets.get(random.nextInt(voteTargets.size()));
-		}
-
-		return aliveHumans.get(random.nextInt(aliveHumans.size()));
 
 	}
 
@@ -202,6 +172,16 @@ public class ChofuWerewolf extends ChofuBaseRole {
 
 		return aliveHumans.get(random.nextInt(aliveHumans.size()));
 
+	}
+
+	@Override
+	public void finish() {
+		super.finish();
+	}
+
+	@Override
+	public Agent divine() {
+		return null;
 	}
 
 

@@ -10,11 +10,11 @@ public class ChofuPower extends AbstractRoleAssignPlayer{
 
 	public ChofuPower(){
 
-		//setSeerPlayer(new ChofuSeer(this));
-		//setVillagerPlayer(new ChofuVillager(this));
-		//setBodyguardPlayer(new ChofuBodyguard(this));
+		setSeerPlayer(new ChofuSeer(this));
+		setVillagerPlayer(new ChofuVillager(this));
+		setBodyguardPlayer(new ChofuBodyguard(this));
 		setWerewolfPlayer(new ChofuWerewolf(this));
-		//setPossessedPlayer(new ChofuPossessed(this));
+		setPossessedPlayer(new ChofuPossessed(this));
 		setMediumPlayer(new ChofuMedium(this));
 	}
 
