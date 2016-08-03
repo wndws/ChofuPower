@@ -1,8 +1,8 @@
-package com.naninuneda.chofu;
+package com.naninuneda.chofu.role;
 
 import org.aiwolf.common.data.Agent;
 
-import com.naninuneda.chofu.role.ChofuBaseRole;
+import com.naninuneda.chofu.ChofuPower;
 
 public class ChofuVillager extends ChofuBaseRole {
 

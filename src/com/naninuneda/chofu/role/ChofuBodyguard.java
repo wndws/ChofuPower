@@ -1,4 +1,4 @@
-package com.naninuneda.chofu;
+package com.naninuneda.chofu.role;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,7 +14,7 @@ import org.aiwolf.common.data.Species;
 import org.aiwolf.common.data.Talk;
 import org.aiwolf.common.net.GameInfo;
 
-import com.naninuneda.chofu.role.ChofuBaseRole;
+import com.naninuneda.chofu.ChofuPower;
 
 public class ChofuBodyguard extends ChofuBaseRole {
 
