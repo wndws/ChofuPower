@@ -17,20 +17,23 @@ import org.aiwolf.common.net.GameInfo;
 import org.aiwolf.common.net.GameSetting;
 
 import com.naninuneda.chofu.ChofuPower;
+import com.naninuneda.chofu.filter.DivineInquestResultFilter;
+import com.naninuneda.chofu.filter.FilterResult;
+import com.naninuneda.chofu.filter.GameInfoFilter;
+import com.naninuneda.chofu.filter.OnePersonCoFilter;
+import com.naninuneda.chofu.filter.SameRoleFilter;
 
 public class ChofuMedium extends ChofuBaseRole  {
 
-	Map<Agent,Species> result,seer;	//自分の経験に基づく判断，嘘つきかそうでないか．
+	Map<Agent,Species> result;	//最初のスタートとなる推理
 	List<String> publicResult;	//発表した結果
-	List<Agent> trustSeers;
 	List<Agent> inquested;
+	Map<Agent,FilterResult> estimated;
 
 	public ChofuMedium(ChofuPower chofuPower) {
 		super();
 		publicResult = new ArrayList<String>();
-		trustSeers = new ArrayList<Agent>();
 		result = new HashMap<Agent,Species>();
-		seer = new HashMap<Agent,Species>();
 		inquested = new ArrayList<Agent>();
 	}
 
@@ -68,79 +71,28 @@ public class ChofuMedium extends ChofuBaseRole  {
 
 		super.update(gameInfo);
 
-		//自分の結果と矛盾する占い，霊媒結果を出していた人間はブラックとする
-		for(Talk talk:talkList){
-			Utterance utterance = new Utterance(talk.getContent());
+		GameInfoFilter gif = new GameInfoFilter(result, gameSetting, gameInfo);
+		OnePersonCoFilter opcf = new OnePersonCoFilter(gif, coMap, gameSetting, gameInfo);
+		DivineInquestResultFilter dirf = new DivineInquestResultFilter(opcf, talkList, coMap, gameSetting, gameInfo);
+		SameRoleFilter srf = new SameRoleFilter(dirf, coMap, getMyRole(), gameSetting, gameInfo);
 
-			if(utterance.getTopic().equals(Topic.DIVINED) || utterance.getTopic().equals(Topic.INQUESTED)){
-				Agent target = utterance.getTarget();
-				if(result.containsKey(target) && !talk.getAgent().equals(getMe())){
-					if((utterance.getResult().equals(Species.HUMAN) && result.get(target).equals(Species.WEREWOLF)) ||
-							(utterance.getResult().equals(Species.WEREWOLF) && result.get(target).equals(Species.HUMAN))){
-						result.put(talk.getAgent(), Species.WEREWOLF);
-					}
-				}
-			}
-		}
-
-
-		//自分以外の霊媒師COはブラックとする
-		if(gameSetting.getRoleNum(Role.SEER) == 1){
-			for(Agent agent:coMap.keySet()){
-				if(coMap.get(agent).equals(Role.MEDIUM) && !agent.equals(getMe())){
-					result.put(agent, Species.WEREWOLF);
-				}
-			}
-		}
-
-		//占い師COしている人間を列挙，resultと矛盾する結果の占い師をカット
-		List<Agent> seers = new ArrayList<Agent>();
-		for(Agent agent:coMap.keySet()){
-			if(coMap.get(agent).equals(Role.SEER)){
-				if(!result.containsKey(agent)){
-					seers.add(agent);
-				}else{
-					if(!result.get(agent).equals(Species.WEREWOLF)){
-						seers.add(agent);
-					}
-				}
-			}
-		}
-
-		trustSeers.clear();
-		//人数にあふれた占い師をランダムでカット
-		if(gameSetting.getRoleNum(Role.SEER) < seers.size()){
-			for(int i = 0;i < gameSetting.getRoleNum(Role.SEER);i++){
-				trustSeers.add(seers.remove(random.nextInt(seers.size())));
-			}
-		}
-
-		//信用している占い師が出した判断．
-		if(!trustSeers.isEmpty()){
-			for(Talk talk:talkList){
-				Utterance utterance = new Utterance(talk.getContent());
-				if(utterance.getTopic().equals(Topic.DIVINED) && trustSeers.contains(talk.getAgent())){
-					seer.put(utterance.getTarget(), utterance.getResult());
-				}
-			}
-		}
-
+		estimated = srf.getMap();
 
 	}
 
 	@Override
 	public String talk() {
 		if(!co){
-			if(result.size() >=0){
+			if(estimated.size() >= 3){
 				co = true;
 				return TemplateTalkFactory.comingout(getMe(), Role.MEDIUM);
 			}else{
 				if(!isLoquacity(getMe())){
 					//怪しい物に対して
-					if(result.containsValue(Species.WEREWOLF)){
+					if(estimated.containsValue(FilterResult.INCREDIBLE)){
 						List<Agent> agents = new ArrayList<Agent>();
-						for(Agent agent:result.keySet()){
-							if(result.get(agent).equals(Species.WEREWOLF) &&
+						for(Agent agent:estimated.keySet()){
+							if(estimated.get(agent).equals(FilterResult.INCREDIBLE) &&
 									voteTargets.contains(agent)){
 								agents.add(agent);
 							}
@@ -157,30 +109,29 @@ public class ChofuMedium extends ChofuBaseRole  {
 		}else{
 			if(!isLoquacity(getMe())){
 				//発表していない結果があった場合はそれを発表
-				if(!result.isEmpty()){
+				if(!estimated.isEmpty()){
 					//ランダムで対象者を選ぶ
 					List<String> willTalks = new ArrayList<String>();	//発言候補のリスト
-					for(Agent target:result.keySet()){
-						if(alives.contains(target)){
+					for(Agent target:estimated.keySet()){
+						if(alives.contains(target) && !target.equals(getMe())){
 							//対象者が生きている場合
-							if(result.get(target).equals(Species.WEREWOLF)){
+							if(estimated.get(target).equals(FilterResult.INCREDIBLE)){
 								//黒判定が出ていたらそれを公表
 								String str = TemplateTalkFactory.estimate(target, Role.WEREWOLF);
 								willTalks.add(str);
 							}else{
 								//白判定ならばその人の申告していたカミングアウトを信じる
-								for(Talk talk:talkList){
-									Utterance utterance = new Utterance(talk.getContent());
-									if(utterance.getTopic().equals(Topic.COMINGOUT) && talk.getAgent().equals(target)){
-										String str = TemplateTalkFactory.estimate(target, utterance.getRole());
-										willTalks.add(str);
-									}
+								if(coMap.containsKey(target)){
+									String str = TemplateTalkFactory.estimate(target, coMap.get(target));
+									willTalks.add(str);
 								}
 							}
 						}else{
-							//死んでいる場合は霊媒結果として発表
-							String str = TemplateTalkFactory.inquested(target, result.get(target));
-							willTalks.add(str);
+							//死んでいる場合は霊媒結果か公然結果かどうか査定して霊媒結果のみ発表
+							if(inquested.contains(target)){
+								String str = TemplateTalkFactory.inquested(target, result.get(target));
+								willTalks.add(str);
+							}
 						}
 					}
 					//発表していない項目から順に発表していくのである
@@ -206,16 +157,16 @@ public class ChofuMedium extends ChofuBaseRole  {
 	public Agent vote() {
 
 		Map<Agent,Species> resultAlive = new HashMap<Agent,Species>();
-		Map<Agent,Species> seerAlive = new HashMap<Agent,Species>();
+		Map<Agent,FilterResult> estimatedAlive = new HashMap<Agent,FilterResult>();
 
 		for(Agent agent : result.keySet()){
 			if(alives.contains(agent)){
 				resultAlive.put(agent, result.get(agent));
 			}
 		}
-		for(Agent agent : seer.keySet()){
+		for(Agent agent : estimated.keySet()){
 			if(alives.contains(agent)){
-				seerAlive.put(agent, seer.get(agent));
+				estimatedAlive.put(agent, estimated.get(agent));
 			}
 		}
 
@@ -232,11 +183,11 @@ public class ChofuMedium extends ChofuBaseRole  {
 			}
 		}
 
-		//信用している占い師の結果に基づいて
-		if(seerAlive.containsValue(Species.WEREWOLF)){
+		//推定の結果に基づいて
+		if(estimatedAlive.containsValue(FilterResult.INCREDIBLE)){
 			List<Agent> agents = new ArrayList<Agent>();
-			for(Agent agent:seerAlive.keySet()){
-				if(seerAlive.get(agent).equals(Species.WEREWOLF)){
+			for(Agent agent:estimatedAlive.keySet()){
+				if(estimatedAlive.get(agent).equals(FilterResult.INCREDIBLE)){
 					agents.add(agent);
 				}
 			}

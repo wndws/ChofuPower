@@ -10,10 +10,12 @@ import org.aiwolf.common.data.Agent;
 import org.aiwolf.common.data.Role;
 import org.aiwolf.common.data.Species;
 import org.aiwolf.common.data.Talk;
+import org.aiwolf.common.net.GameInfo;
+import org.aiwolf.common.net.GameSetting;
 
 public class DivineInquestResultFilter extends EstimateFilter {
 
-	public DivineInquestResultFilter(EstimateFilter upperFilter,List<Talk> talkList,Map<Agent,Role> coMap){
+	public DivineInquestResultFilter(EstimateFilter upperFilter,List<Talk> talkList,Map<Agent,Role> coMap,GameSetting gameSetting,GameInfo gameInfo){
 
 		super(upperFilter);
 
@@ -43,6 +45,7 @@ public class DivineInquestResultFilter extends EstimateFilter {
 				}
 			}
 		}
+		estimateFromNumber(gameInfo.getAgentList(),gameSetting.getRoleNumMap());
 	}
 
 }
