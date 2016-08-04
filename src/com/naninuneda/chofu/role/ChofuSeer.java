@@ -87,7 +87,7 @@ public class ChofuSeer extends ChofuBaseRole {
 	@Override
 	public String talk() {
 		if(!co){
-			if(result.size() >= gameSetting.getRoleNum(Role.WEREWOLF) - 1){
+			if(result.size() >= 1){
 				co = true;
 				return TemplateTalkFactory.comingout(getMe(), Role.SEER);
 			}else{

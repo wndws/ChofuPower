@@ -23,12 +23,15 @@ public class ChofuMedium extends ChofuBaseRole  {
 	Map<Agent,Species> result,seer;	//自分の経験に基づく判断，嘘つきかそうでないか．
 	List<String> publicResult;	//発表した結果
 	List<Agent> trustSeers;
+	List<Agent> inquested;
+
 	public ChofuMedium(ChofuPower chofuPower) {
 		super();
 		publicResult = new ArrayList<String>();
 		trustSeers = new ArrayList<Agent>();
 		result = new HashMap<Agent,Species>();
 		seer = new HashMap<Agent,Species>();
+		inquested = new ArrayList<Agent>();
 	}
 
 	@Override
@@ -42,6 +45,9 @@ public class ChofuMedium extends ChofuBaseRole  {
 		//霊媒結果の反映．
 		Judge judge = gameInfo.getMediumResult();
 		if(judge != null){
+			if(!inquested.contains(judge.getTarget())){
+				inquested.add(judge.getTarget());
+			}
 			//霊媒結果人狼だった場合
 			if(judge.getResult().equals(Species.WEREWOLF)){
 				result.put(judge.getTarget(), Species.WEREWOLF);
@@ -125,7 +131,7 @@ public class ChofuMedium extends ChofuBaseRole  {
 	@Override
 	public String talk() {
 		if(!co){
-			if(result.size() >= gameSetting.getRoleNum(Role.WEREWOLF)){
+			if(result.size() >=0){
 				co = true;
 				return TemplateTalkFactory.comingout(getMe(), Role.MEDIUM);
 			}else{
