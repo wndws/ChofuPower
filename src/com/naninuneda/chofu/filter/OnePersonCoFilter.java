@@ -7,15 +7,25 @@ import org.aiwolf.common.data.Role;
 
 public class OnePersonCoFilter extends EstimateFilter {
 
-	public OnePersonCoFilter(Map<Agent,Role> coMap){
-		super();
+	public OnePersonCoFilter(EstimateFilter upperFilter,Map<Agent,Role> coMap){
+		super(upperFilter);
 		for(Agent agent:coMap.keySet()){
-			if(map.containsKey(agent)){
-				map.remove(agent);
-			}else{
-				map.put(agent, FilterResult.CREDIBLE);
+			Role role = coMap.get(agent);
+			boolean only = true;
+			for(Agent agent2:coMap.keySet()){
+				if(!agent2.equals(agent) && role.equals(coMap.get(agent2))){
+					only = false;
+					break;
+				}
+			}
+			if(only){
+				//上書きしない
+				if(!map.containsKey(agent)){
+					map.put(agent, FilterResult.CREDIBLE);
+				}
 			}
 		}
+
 	}
 
 }

@@ -5,7 +5,7 @@ import java.util.Map;
 
 import org.aiwolf.common.data.Agent;
 
-public abstract class EstimateFilter implements Filter {
+public abstract class EstimateFilter {
 
 	Map<Agent,FilterResult> map;
 
@@ -13,16 +13,12 @@ public abstract class EstimateFilter implements Filter {
 		map = new HashMap<Agent,FilterResult>();
 	}
 
-	public Map<Agent,FilterResult> getMap(){
-		return map;
+	public EstimateFilter(EstimateFilter upperFilter){
+		map = upperFilter.getMap();
 	}
 
-	@Override
-	public FilterResult getResult(Agent agent) {
-		if(map.containsKey(agent)){
-			return map.get(agent);
-		}
-		return FilterResult.UNKNOWN;
+	public Map<Agent,FilterResult> getMap(){
+		return map;
 	}
 
 }

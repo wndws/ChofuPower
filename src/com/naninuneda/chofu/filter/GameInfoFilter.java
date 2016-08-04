@@ -19,6 +19,7 @@ public class GameInfoFilter extends EstimateFilter {
 			}
 			map.put(agent, FilterResult.INCREDIBLE);
 		}
+
 		//さらに役職の人数から特定できる物に関して
 		int wolf = 0;
 		for(Agent agent:map.keySet()){
