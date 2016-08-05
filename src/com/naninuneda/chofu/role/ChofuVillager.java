@@ -224,6 +224,32 @@ public class ChofuVillager extends ChofuBaseRole {
 			}
 		}
 
+		//COが多すぎるやつをとりあえず吊る
+		Map<Role,Integer> roleNum = new HashMap<Role,Integer>();
+		for(Agent agent:coMap.keySet()){
+			if(roleNum.containsKey(coMap.get(agent))){
+				int num = roleNum.get(agent);
+				roleNum.put(coMap.get(agent), num + 1);
+			}else{
+				roleNum.put(coMap.get(agent), 1);
+			}
+		}
+		List<Agent> coAgents = new ArrayList<>();
+		for(Role role:roleNum.keySet()){
+			//gameSettingよりもCO人数が多い場合場合
+			if(roleNum.get(role) > gameSetting.getRoleNum(role)){
+				//そのCOをしているやつを吊る候補にいれる
+				for(Agent agent:coMap.keySet()){
+					if(role.equals(coMap.get(agent))&& voteTargets.contains(agent)){
+						coAgents.add(agent);
+					}
+				}
+			}
+		}
+		if(!coAgents.isEmpty()){
+			return coAgents.get(random.nextInt(coAgents.size()));
+		}
+
 		//白でない奴からランダム
 		List<Agent> agents = new ArrayList<Agent>();
 		for(Agent agent:voteTargets){
