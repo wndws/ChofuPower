@@ -316,8 +316,11 @@ public class ChofuSeer extends ChofuBaseRole {
 			}
 		}
 		List<Agent> maxes = new ArrayList<Agent>();
-		maxes.add(voteTargets.get(random.nextInt(voteTargets.size())));
 		for(Agent agent:doubt.keySet()){
+			if(maxes.isEmpty()){
+				maxes.add(agent);
+				continue;
+			}
 			if(!divined.contains(agent)){
 				if(doubt.get(agent) > doubt.get(maxes.get(0))){
 					maxes.clear();
@@ -329,8 +332,11 @@ public class ChofuSeer extends ChofuBaseRole {
 		}
 
 		List<Agent> maxes2 = new ArrayList<Agent>();
-		maxes2.add(voteTargets.get(random.nextInt(voteTargets.size())));
 		for(Agent agent:doubt.keySet()){
+			if(maxes2.isEmpty()){
+				maxes2.add(agent);
+				continue;
+			}
 			if(!divined.contains(agent) && !maxes.contains(agent)){
 				if(doubt.get(agent) > doubt.get(maxes2.get(0))){
 					maxes2.clear();

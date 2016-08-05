@@ -224,8 +224,11 @@ public class ChofuWerewolf extends ChofuBaseRole {
 			}
 		}
 		List<Agent> maxes = new ArrayList<Agent>();
-		maxes.add(AttackTargets.get(random.nextInt(AttackTargets.size())));
 		for(Agent agent:doubt.keySet()){
+			if(maxes.isEmpty()){
+				maxes.add(agent);
+				continue;
+			}
 			if(doubt.get(agent) > doubt.get(maxes.get(0))){
 				maxes.clear();
 				maxes.add(agent);
