@@ -262,7 +262,7 @@ public class ChofuSeer extends ChofuBaseRole {
 		Map<Role,Integer> roleNum = new HashMap<Role,Integer>();
 		for(Agent agent:coMap.keySet()){
 			if(roleNum.containsKey(coMap.get(agent))){
-				int num = roleNum.get(agent);
+				int num = roleNum.get(coMap.get(agent));
 				roleNum.put(coMap.get(agent), num + 1);
 			}else{
 				roleNum.put(coMap.get(agent), 1);

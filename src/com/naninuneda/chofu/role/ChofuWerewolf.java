@@ -248,40 +248,45 @@ public class ChofuWerewolf extends ChofuBaseRole {
 	@Override
 	public String whisper() {
 
-		// まず占い師，霊媒師，狩人でCOに重複がない場合
-		List<Agent> targets = new ArrayList<Agent>();
-		for(Agent agent1:AttackTargets){
-			if(coMap.containsKey(agent1)){
-				if(coMap.get(agent1).equals(Role.BODYGUARD) ||
-						coMap.get(agent1).equals(Role.SEER) ||
-						coMap.get(agent1).equals(Role.MEDIUM)){
-					boolean overlap = false;
-					for(Agent agent2:AttackTargets){
-						if(!agent1.equals(agent2) && coMap.get(agent1).equals(coMap.get(agent2))){
-							overlap = true;
-							break;
+		if(!isAlreadyWhisperOneBefore()){
+
+			// まず占い師，霊媒師，狩人でCOに重複がない場合
+			List<Agent> targets = new ArrayList<Agent>();
+			for(Agent agent1:AttackTargets){
+				if(coMap.containsKey(agent1)){
+					if(coMap.get(agent1).equals(Role.BODYGUARD) ||
+							coMap.get(agent1).equals(Role.SEER) ||
+							coMap.get(agent1).equals(Role.MEDIUM)){
+						boolean overlap = false;
+						for(Agent agent2:AttackTargets){
+							if(!agent1.equals(agent2) && coMap.get(agent1).equals(coMap.get(agent2))){
+								overlap = true;
+								break;
+							}
 						}
-					}
-					if(!overlap){
-						targets.add(agent1);
+						if(!overlap){
+							targets.add(agent1);
+						}
 					}
 				}
 			}
-		}
-		if(!targets.isEmpty()){
-			Agent target = targets.get(random.nextInt(targets.size()));
+			if(!targets.isEmpty()){
+				Agent target = targets.get(random.nextInt(targets.size()));
+				AttackList.add(target);
+				return TemplateWhisperFactory.attack(target);
+			}
+
+			if(!AttackList.isEmpty()){
+				Agent target = AttackList.get(random.nextInt(AttackList.size()));
+				return TemplateWhisperFactory.attack(target);
+			}
+
+			Agent target = AttackTargets.get(random.nextInt(AttackTargets.size()));
 			AttackList.add(target);
 			return TemplateWhisperFactory.attack(target);
-		}
 
-		if(!AttackList.isEmpty()){
-			Agent target = AttackList.get(random.nextInt(AttackList.size()));
-			return TemplateWhisperFactory.attack(target);
 		}
-
-		Agent target = AttackTargets.get(random.nextInt(AttackTargets.size()));
-		AttackList.add(target);
-		return TemplateWhisperFactory.attack(target);
+		return TemplateWhisperFactory.over();
 	}
 
 	@Override
@@ -329,6 +334,15 @@ public class ChofuWerewolf extends ChofuBaseRole {
 	public Agent guard() {
 		// TODO 自動生成されたメソッド・スタブ
 		return null;
+	}
+
+	private boolean isAlreadyWhisperOneBefore(){
+		if(!gameInfo.getWhisperList().isEmpty()){
+			if(gameInfo.getWhisperList().get(gameInfo.getWhisperList().size()-1).getAgent().equals(getMe())){
+				return true;
+			}
+		}
+		return false;
 	}
 
 }
