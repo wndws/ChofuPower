@@ -27,9 +27,9 @@ public class ChofuWerewolf extends ChofuBaseRole {
 
 	Map<Agent,Species> result;
 	List<String> publicResult;	//発表した結果
-	Agent guarded;
 	Map<Agent, FilterResult> estimated;
 	List<Agent> wolves,AttackTargets,AttackList;
+	List<Talk> todayWhisperList;
 
 	public ChofuWerewolf(ChofuPower chofuPower) {
 		super();
@@ -38,6 +38,7 @@ public class ChofuWerewolf extends ChofuBaseRole {
 		wolves = new ArrayList<Agent>();
 		AttackTargets = new ArrayList<Agent>();
 		AttackList = new ArrayList<Agent>();
+		todayWhisperList = new ArrayList<Talk>();
 	}
 
 	@Override
@@ -57,6 +58,7 @@ public class ChofuWerewolf extends ChofuBaseRole {
 	@Override
 	public void dayStart() {
 		super.dayStart();
+		todayWhisperList.clear();
 		//襲撃結果の反映 襲撃されたのは人間である．
 		Agent attaked = gameInfo.getAttackedAgent();
 		if(attaked != null){
@@ -66,7 +68,6 @@ public class ChofuWerewolf extends ChofuBaseRole {
 
 	@Override
 	public void update(GameInfo gameInfo){
-
 		super.update(gameInfo);
 
 		AttackTargets.clear();
@@ -80,6 +81,9 @@ public class ChofuWerewolf extends ChofuBaseRole {
 			Utterance utterance = new Utterance(whisper.getContent());
 			if(utterance.getTopic().equals(Topic.ATTACK) && !whisper.getAgent().equals(getMe())){
 				AttackList.add(utterance.getTarget());
+			}
+			if(!todayWhisperList.contains(whisper) && whisper.getDay() == getDay()){
+				todayWhisperList.add(whisper);
 			}
 		}
 
@@ -248,8 +252,54 @@ public class ChofuWerewolf extends ChofuBaseRole {
 	@Override
 	public String whisper() {
 
-		if(!isAlreadyWhisperOneBefore()){
+		if(!isLoquacityWhisper(getMe())){
 
+			//アタックリストが空の場合
+			if(AttackList.isEmpty()){
+				// まず占い師，霊媒師，狩人でCOに重複がない場合
+				List<Agent> targets = new ArrayList<Agent>();
+				for(Agent agent1:AttackTargets){
+					if(coMap.containsKey(agent1)){
+						if(coMap.get(agent1).equals(Role.BODYGUARD) ||
+								coMap.get(agent1).equals(Role.SEER) ||
+								coMap.get(agent1).equals(Role.MEDIUM)){
+							boolean overlap = false;
+							for(Agent agent2:AttackTargets){
+								if(!agent1.equals(agent2) && coMap.get(agent1).equals(coMap.get(agent2))){
+									overlap = true;
+									break;
+								}
+							}
+							if(!overlap){
+								targets.add(agent1);
+							}
+						}
+					}
+				}
+				if(!targets.isEmpty()){
+					Agent target = targets.get(random.nextInt(targets.size()));
+					AttackList.add(target);
+					return TemplateWhisperFactory.attack(target);
+				}
+			}
+
+			if(!AttackList.isEmpty()){
+				Agent target = AttackList.get(AttackList.size() - 1);
+				return TemplateWhisperFactory.attack(target);
+			}
+
+			Agent target = AttackTargets.get(random.nextInt(AttackTargets.size()));
+			AttackList.add(target);
+			return TemplateWhisperFactory.attack(target);
+
+		}
+		return TemplateWhisperFactory.over();
+	}
+
+	@Override
+	public Agent attack() {
+
+		if(AttackList.isEmpty()){
 			// まず占い師，霊媒師，狩人でCOに重複がない場合
 			List<Agent> targets = new ArrayList<Agent>();
 			for(Agent agent1:AttackTargets){
@@ -271,57 +321,12 @@ public class ChofuWerewolf extends ChofuBaseRole {
 				}
 			}
 			if(!targets.isEmpty()){
-				Agent target = targets.get(random.nextInt(targets.size()));
-				AttackList.add(target);
-				return TemplateWhisperFactory.attack(target);
+				return targets.get(random.nextInt(targets.size()));
 			}
-
-			if(!AttackList.isEmpty()){
-				Agent target = AttackList.get(random.nextInt(AttackList.size()));
-				return TemplateWhisperFactory.attack(target);
-			}
-
-			Agent target = AttackTargets.get(random.nextInt(AttackTargets.size()));
-			AttackList.add(target);
-			return TemplateWhisperFactory.attack(target);
-
+		}else{
+			return AttackList.get(AttackList.size() - 1);
 		}
-		return TemplateWhisperFactory.over();
-	}
-
-	@Override
-	public Agent attack() {
-
-		// まず占い師，霊媒師，狩人でCOに重複がない場合
-		List<Agent> targets = new ArrayList<Agent>();
-		for(Agent agent1:AttackTargets){
-			if(coMap.containsKey(agent1)){
-				if(coMap.get(agent1).equals(Role.BODYGUARD) ||
-						coMap.get(agent1).equals(Role.SEER) ||
-						coMap.get(agent1).equals(Role.MEDIUM)){
-					boolean overlap = false;
-					for(Agent agent2:AttackTargets){
-						if(!agent1.equals(agent2) && coMap.get(agent1).equals(coMap.get(agent2))){
-							overlap = true;
-							break;
-						}
-					}
-					if(!overlap){
-						targets.add(agent1);
-					}
-				}
-			}
-		}
-		if(!targets.isEmpty()){
-			return targets.get(random.nextInt(targets.size()));
-		}
-
-		if(!AttackList.isEmpty()){
-			return AttackList.get(random.nextInt(AttackList.size()));
-		}
-
 		return AttackTargets.get(random.nextInt(AttackTargets.size()));
-
 	}
 
 	@Override
@@ -336,13 +341,28 @@ public class ChofuWerewolf extends ChofuBaseRole {
 		return null;
 	}
 
-	private boolean isAlreadyWhisperOneBefore(){
-		if(!gameInfo.getWhisperList().isEmpty()){
-			if(gameInfo.getWhisperList().get(gameInfo.getWhisperList().size()-1).getAgent().equals(getMe())){
-				return true;
+	//饒舌であればtrue
+	public boolean isLoquacityWhisper(Agent agent){
+		List<Talk> talks = new ArrayList<Talk>();
+		for(Talk talk:todayWhisperList){
+			if(talk.getAgent().equals(agent)){
+				talks.add(talk);
 			}
 		}
-		return false;
+		int aliveWolves = 0;
+		for(Agent wolf:wolves){
+			if(alives.contains(wolf)){
+				aliveWolves++;
+			}
+		}
+
+		double talkPerWolf = (double) todayWhisperList.size() / aliveWolves;
+
+		if(talkPerWolf >= talks.size()){
+			return false;
+		}else{
+			return true;
+		}
 	}
 
 }

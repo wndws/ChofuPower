@@ -26,7 +26,6 @@ public class ChofuPossessed extends ChofuBaseRole {
 
 	Map<Agent,Species> result;
 	List<String> publicResult;	//発表した結果
-	Agent guarded;
 	Map<Agent, FilterResult> estimated;
 
 	public ChofuPossessed(ChofuPower chofuPower) {
