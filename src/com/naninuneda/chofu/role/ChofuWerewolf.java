@@ -29,7 +29,7 @@ public class ChofuWerewolf extends ChofuBaseRole {
 	List<String> publicResult;	//発表した結果
 	Agent guarded;
 	Map<Agent, FilterResult> estimated;
-	List<Agent> wolves,AttackTargets;
+	List<Agent> wolves,AttackTargets,AttackList;
 
 	public ChofuWerewolf(ChofuPower chofuPower) {
 		super();
@@ -37,6 +37,7 @@ public class ChofuWerewolf extends ChofuBaseRole {
 		result = new HashMap<Agent,Species>();
 		wolves = new ArrayList<Agent>();
 		AttackTargets = new ArrayList<Agent>();
+		AttackList = new ArrayList<Agent>();
 	}
 
 	@Override
@@ -68,7 +69,19 @@ public class ChofuWerewolf extends ChofuBaseRole {
 
 		super.update(gameInfo);
 
-		voteTargets.removeAll(wolves);
+		AttackTargets.clear();
+		for(Agent agent:voteTargets){
+			if(!wolves.contains(agent)){
+				AttackTargets.add(agent);
+			}
+		}
+
+		for(Talk whisper:gameInfo.getWhisperList()){
+			Utterance utterance = new Utterance(whisper.getContent());
+			if(utterance.getTopic().equals(Topic.ATTACK) && !whisper.getAgent().equals(getMe())){
+				AttackList.add(utterance.getTarget());
+			}
+		}
 
 		GameInfoFilter gif = new GameInfoFilter(result, gameSetting, gameInfo);
 		SameRoleFilter srf = new SameRoleFilter(gif, coMap, getMyRole(), getMe(), gameSetting, gameInfo);
@@ -199,19 +212,19 @@ public class ChofuWerewolf extends ChofuBaseRole {
 
 		//人気のある者に投票する
 		Map<Agent,Integer> doubt = new HashMap<Agent,Integer>();
-		for(Agent agent:voteTargets){
+		for(Agent agent:AttackTargets){
 			doubt.put(agent, 0);
 		}
 		for(Talk talk:todayTalkList){
 			Utterance utterance = new Utterance(talk.getContent());
 			if((utterance.getTopic().equals(Topic.VOTE) || utterance.getTopic().equals(Topic.ESTIMATE))&&
-					voteTargets.contains(utterance.getTarget())){
+					AttackTargets.contains(utterance.getTarget())){
 				int voteNum = doubt.get(utterance.getTarget());
 				doubt.put(utterance.getTarget(),voteNum + 1);
 			}
 		}
 		List<Agent> maxes = new ArrayList<Agent>();
-		maxes.add(voteTargets.get(random.nextInt(voteTargets.size())));
+		maxes.add(AttackTargets.get(random.nextInt(AttackTargets.size())));
 		for(Agent agent:doubt.keySet()){
 			if(doubt.get(agent) > doubt.get(maxes.get(0))){
 				maxes.clear();
@@ -234,13 +247,13 @@ public class ChofuWerewolf extends ChofuBaseRole {
 
 		// まず占い師，霊媒師，狩人でCOに重複がない場合
 		List<Agent> targets = new ArrayList<Agent>();
-		for(Agent agent1:voteTargets){
+		for(Agent agent1:AttackTargets){
 			if(coMap.containsKey(agent1)){
 				if(coMap.get(agent1).equals(Role.BODYGUARD) ||
 						coMap.get(agent1).equals(Role.SEER) ||
 						coMap.get(agent1).equals(Role.MEDIUM)){
 					boolean overlap = false;
-					for(Agent agent2:voteTargets){
+					for(Agent agent2:AttackTargets){
 						if(!agent1.equals(agent2) && coMap.get(agent1).equals(coMap.get(agent2))){
 							overlap = true;
 							break;
@@ -254,16 +267,17 @@ public class ChofuWerewolf extends ChofuBaseRole {
 		}
 		if(!targets.isEmpty()){
 			Agent target = targets.get(random.nextInt(targets.size()));
+			AttackList.add(target);
 			return TemplateWhisperFactory.attack(target);
 		}
 
-		if(!AttackTargets.isEmpty()){
-			Agent target = AttackTargets.get(random.nextInt(AttackTargets.size()));
+		if(!AttackList.isEmpty()){
+			Agent target = AttackList.get(random.nextInt(AttackList.size()));
 			return TemplateWhisperFactory.attack(target);
 		}
 
-		Agent target = voteTargets.get(random.nextInt(voteTargets.size()));
-		AttackTargets.add(target);
+		Agent target = AttackTargets.get(random.nextInt(AttackTargets.size()));
+		AttackList.add(target);
 		return TemplateWhisperFactory.attack(target);
 	}
 
@@ -272,13 +286,13 @@ public class ChofuWerewolf extends ChofuBaseRole {
 
 		// まず占い師，霊媒師，狩人でCOに重複がない場合
 		List<Agent> targets = new ArrayList<Agent>();
-		for(Agent agent1:voteTargets){
+		for(Agent agent1:AttackTargets){
 			if(coMap.containsKey(agent1)){
 				if(coMap.get(agent1).equals(Role.BODYGUARD) ||
 						coMap.get(agent1).equals(Role.SEER) ||
 						coMap.get(agent1).equals(Role.MEDIUM)){
 					boolean overlap = false;
-					for(Agent agent2:voteTargets){
+					for(Agent agent2:AttackTargets){
 						if(!agent1.equals(agent2) && coMap.get(agent1).equals(coMap.get(agent2))){
 							overlap = true;
 							break;
@@ -294,11 +308,11 @@ public class ChofuWerewolf extends ChofuBaseRole {
 			return targets.get(random.nextInt(targets.size()));
 		}
 
-		if(!AttackTargets.isEmpty()){
-			return AttackTargets.get(random.nextInt(AttackTargets.size()));
+		if(!AttackList.isEmpty()){
+			return AttackList.get(random.nextInt(AttackList.size()));
 		}
 
-		return voteTargets.get(random.nextInt(voteTargets.size()));
+		return AttackTargets.get(random.nextInt(AttackTargets.size()));
 
 	}
 
