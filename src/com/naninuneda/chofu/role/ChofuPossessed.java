@@ -79,9 +79,6 @@ public class ChofuPossessed extends ChofuBaseRole {
 						for(Agent agent:result.keySet()){
 							if(voteTargets.contains(agent)){
 								if(result.get(agent).equals(Species.WEREWOLF)){
-									String str = TemplateTalkFactory.estimate(agent, Role.WEREWOLF);
-									willTalks.add(str);
-								}else{
 									if(coMap.containsKey(agent)){
 										if(coMap.get(agent).equals(getMyRole())){
 											String str = TemplateTalkFactory.estimate(agent, Role.POSSESSED);
@@ -94,6 +91,9 @@ public class ChofuPossessed extends ChofuBaseRole {
 										String str = TemplateTalkFactory.estimate(agent, Role.VILLAGER);
 										willTalks.add(str);
 									}
+								}else{
+									String str = TemplateTalkFactory.estimate(agent, Role.WEREWOLF);
+									willTalks.add(str);
 								}
 							}
 						}
@@ -102,9 +102,6 @@ public class ChofuPossessed extends ChofuBaseRole {
 						for(Agent agent:estimated.keySet()){
 							if(voteTargets.contains(agent)){
 								if(estimated.get(agent).equals(FilterResult.INCREDIBLE)){
-									String str = TemplateTalkFactory.estimate(agent, Role.WEREWOLF);
-									willTalks.add(str);
-								}else{
 									if(coMap.containsKey(agent)){
 										if(coMap.get(agent).equals(getMyRole())){
 											String str = TemplateTalkFactory.estimate(agent, Role.POSSESSED);
@@ -117,6 +114,9 @@ public class ChofuPossessed extends ChofuBaseRole {
 										String str = TemplateTalkFactory.estimate(agent, Role.VILLAGER);
 										willTalks.add(str);
 									}
+								}else{
+									String str = TemplateTalkFactory.estimate(agent, Role.WEREWOLF);
+									willTalks.add(str);
 								}
 							}
 						}
