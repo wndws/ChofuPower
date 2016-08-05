@@ -40,6 +40,8 @@ public class ChofuMedium extends ChofuBaseRole  {
 	@Override
 	public void initialize(GameInfo gameInfo,GameSetting gameSetting){
 		super.initialize(gameInfo,gameSetting);
+		//自分は人間である
+		result.put(getMe(), Species.HUMAN);
 	}
 
 	@Override
@@ -72,11 +74,11 @@ public class ChofuMedium extends ChofuBaseRole  {
 		super.update(gameInfo);
 
 		GameInfoFilter gif = new GameInfoFilter(result, gameSetting, gameInfo);
-		OnePersonCoFilter opcf = new OnePersonCoFilter(gif, coMap, gameSetting, gameInfo);
+		SameRoleFilter srf = new SameRoleFilter(gif, coMap, getMyRole(), getMe(), gameSetting, gameInfo);
+		OnePersonCoFilter opcf = new OnePersonCoFilter(srf, coMap, gameSetting, gameInfo);
 		DivineInquestResultFilter dirf = new DivineInquestResultFilter(opcf, talkList, coMap, gameSetting, gameInfo);
-		SameRoleFilter srf = new SameRoleFilter(dirf, coMap, getMyRole(), gameSetting, gameInfo);
 
-		estimated = srf.getMap();
+		estimated = dirf.getMap();
 
 	}
 
@@ -88,19 +90,63 @@ public class ChofuMedium extends ChofuBaseRole  {
 				return TemplateTalkFactory.comingout(getMe(), Role.MEDIUM);
 			}else{
 				if(!isLoquacity(getMe())){
-					//怪しい物に対して
-					if(estimated.containsValue(FilterResult.INCREDIBLE)){
-						List<Agent> agents = new ArrayList<Agent>();
-						for(Agent agent:estimated.keySet()){
-							if(estimated.get(agent).equals(FilterResult.INCREDIBLE) &&
-									voteTargets.contains(agent)){
-								agents.add(agent);
+					List<String> willTalks = new ArrayList<String>();
+					if(!result.isEmpty()){
+						for(Agent agent:result.keySet()){
+							if(voteTargets.contains(agent)){
+								if(result.get(agent).equals(Species.WEREWOLF)){
+									String str = TemplateTalkFactory.estimate(agent, Role.WEREWOLF);
+									willTalks.add(str);
+								}else{
+									if(coMap.containsKey(agent)){
+										if(coMap.get(agent).equals(getMyRole())){
+											String str = TemplateTalkFactory.estimate(agent, Role.POSSESSED);
+											willTalks.add(str);
+										}else{
+											String str = TemplateTalkFactory.estimate(agent, coMap.get(agent));
+											willTalks.add(str);
+										}
+									}else{
+										String str = TemplateTalkFactory.estimate(agent, Role.VILLAGER);
+										willTalks.add(str);
+									}
+								}
 							}
 						}
-						if(!agents.isEmpty()){
-							Agent agent = agents.get(random.nextInt(agents.size()));
-							return TemplateTalkFactory.vote(agent);
+					}
+					if(!estimated.isEmpty()){
+						for(Agent agent:estimated.keySet()){
+							if(voteTargets.contains(agent)){
+								if(estimated.get(agent).equals(FilterResult.INCREDIBLE)){
+									String str = TemplateTalkFactory.estimate(agent, Role.WEREWOLF);
+									willTalks.add(str);
+								}else{
+									if(coMap.containsKey(agent)){
+										if(coMap.get(agent).equals(getMyRole())){
+											String str = TemplateTalkFactory.estimate(agent, Role.POSSESSED);
+											willTalks.add(str);
+										}else{
+											String str = TemplateTalkFactory.estimate(agent, coMap.get(agent));
+											willTalks.add(str);
+										}
+									}else{
+										String str = TemplateTalkFactory.estimate(agent, Role.VILLAGER);
+										willTalks.add(str);
+									}
+								}
+							}
 						}
+					}
+					//順番に発表してゆく
+					for(String str:willTalks){
+						if(!publicResult.contains(str)){
+							return str;
+						}
+					}
+
+					//基本全て発表し終わったらもう一回だけどたまに他の発言も言うよ
+					if(!willTalks.isEmpty() && random.nextInt(10) < 7){
+						return willTalks.get(random.nextInt(willTalks.size()));
 					}
 					Agent agent = getProperVoteTarget();
 					return TemplateTalkFactory.vote(agent);
@@ -116,14 +162,24 @@ public class ChofuMedium extends ChofuBaseRole  {
 						if(alives.contains(target) && !target.equals(getMe())){
 							//対象者が生きている場合
 							if(estimated.get(target).equals(FilterResult.INCREDIBLE)){
-								//黒判定が出ていたらそれを公表
+								//黒判定が出ていたらそれを推定として公表
 								String str = TemplateTalkFactory.estimate(target, Role.WEREWOLF);
 								willTalks.add(str);
 							}else{
 								//白判定ならばその人の申告していたカミングアウトを信じる
-								if(coMap.containsKey(target)){
-									String str = TemplateTalkFactory.estimate(target, coMap.get(target));
-									willTalks.add(str);
+								for(Talk talk:talkList){
+									Utterance utterance = new Utterance(talk.getContent());
+									if(utterance.getTopic().equals(Topic.COMINGOUT) && talk.getAgent().equals(target)){
+										if(!utterance.getRole().equals(getMyRole()) && gameSetting.getRoleNum(getMyRole()) == 1){
+											String comingout = TemplateTalkFactory.estimate(target, utterance.getRole());
+											willTalks.add(comingout);
+											break;
+										}else{
+											String comingout = TemplateTalkFactory.estimate(target, Role.POSSESSED);
+											willTalks.add(comingout);
+											break;
+										}
+									}
 								}
 							}
 						}else{
@@ -160,12 +216,12 @@ public class ChofuMedium extends ChofuBaseRole  {
 		Map<Agent,FilterResult> estimatedAlive = new HashMap<Agent,FilterResult>();
 
 		for(Agent agent : result.keySet()){
-			if(alives.contains(agent)){
+			if(voteTargets.contains(agent)){
 				resultAlive.put(agent, result.get(agent));
 			}
 		}
 		for(Agent agent : estimated.keySet()){
-			if(alives.contains(agent)){
+			if(voteTargets.contains(agent)){
 				estimatedAlive.put(agent, estimated.get(agent));
 			}
 		}

@@ -14,21 +14,34 @@ import org.aiwolf.common.data.Role;
 import org.aiwolf.common.data.Species;
 import org.aiwolf.common.data.Talk;
 import org.aiwolf.common.net.GameInfo;
+import org.aiwolf.common.net.GameSetting;
 
 import com.naninuneda.chofu.ChofuPower;
+import com.naninuneda.chofu.filter.DivineInquestResultFilter;
+import com.naninuneda.chofu.filter.FilterResult;
+import com.naninuneda.chofu.filter.GameInfoFilter;
+import com.naninuneda.chofu.filter.OnePersonCoFilter;
+import com.naninuneda.chofu.filter.SameRoleFilter;
 
 public class ChofuSeer extends ChofuBaseRole {
 
-	Map<Agent,Species> result;
+	Map<Agent,Species> result;	//最初のスタートとなる推理
 	List<String> publicResult;	//発表した結果
-	List<Agent> alreadyDivine;
-
+	List<Agent> divined;
+	Map<Agent,FilterResult> estimated;
 
 	public ChofuSeer(ChofuPower chofuPower) {
 		super();
 		publicResult = new ArrayList<String>();
-		alreadyDivine = new ArrayList<Agent>();
 		result = new HashMap<Agent,Species>();
+		divined = new ArrayList<Agent>();
+	}
+
+	@Override
+	public void initialize(GameInfo gameInfo,GameSetting gameSetting){
+		super.initialize(gameInfo,gameSetting);
+		//自分は人間である
+		result.put(getMe(), Species.HUMAN);
 	}
 
 	@Override
@@ -41,9 +54,9 @@ public class ChofuSeer extends ChofuBaseRole {
 			if(judge.getResult().equals(Species.WEREWOLF)){
 				result.put(judge.getTarget(), Species.WEREWOLF);
 			}else{
-				//もし怪しまれていた対象だった場合，狂人である可能性が高い．狂人の数を減らす→廃止
 				result.put(judge.getTarget(), Species.HUMAN);
 			}
+			divined.add(judge.getTarget());
 		}
 		//襲撃結果の反映 襲撃されたのは人間である．
 		Agent attaked = gameInfo.getAttackedAgent();
@@ -57,31 +70,12 @@ public class ChofuSeer extends ChofuBaseRole {
 
 		super.update(gameInfo);
 
-		//自分の結果と矛盾する占い，霊媒結果を出していた人間はブラックとする
-		//ただ占い済みの人は結果を変えない
-		for(Talk talk:talkList){
-			Utterance utterance = new Utterance(talk.getContent());
-			if(utterance.getTopic().equals(Topic.DIVINED) || utterance.getTopic().equals(Topic.INQUESTED)){
-				Agent target = utterance.getTarget();
-				if(result.containsKey(target) && !talk.getAgent().equals(getMe()) && !alreadyDivine.contains(talk.getAgent())){
-					if((utterance.getResult().equals(Species.HUMAN) && result.get(target).equals(Species.WEREWOLF)) ||
-							(utterance.getResult().equals(Species.WEREWOLF) && result.get(target).equals(Species.HUMAN))){
-						result.put(talk.getAgent(), Species.WEREWOLF);
-					}
-				}
-			}
-		}
-		//自分以外の占い師COはブラックとする
-		//ただ占い済みの人は結果を変えない
-		if(gameSetting.getRoleNum(Role.SEER) == 1){
-			for(Agent agent:coMap.keySet()){
-				if(coMap.get(agent).equals(Role.SEER) &&
-						!agent.equals(getMe()) &&
-						!alreadyDivine.contains(agent)){
-					result.put(agent, Species.WEREWOLF);
-				}
-			}
-		}
+		GameInfoFilter gif = new GameInfoFilter(result, gameSetting, gameInfo);
+		SameRoleFilter srf = new SameRoleFilter(gif, coMap, getMyRole(), getMe(), gameSetting, gameInfo);
+		OnePersonCoFilter opcf = new OnePersonCoFilter(srf, coMap, gameSetting, gameInfo);
+		DivineInquestResultFilter dirf = new DivineInquestResultFilter(opcf, talkList, coMap, gameSetting, gameInfo);
+
+		estimated = dirf.getMap();
 	}
 
 	@Override
@@ -92,19 +86,63 @@ public class ChofuSeer extends ChofuBaseRole {
 				return TemplateTalkFactory.comingout(getMe(), Role.SEER);
 			}else{
 				if(!isLoquacity(getMe())){
-					//怪しい物に対して
-					if(result.containsValue(Species.WEREWOLF)){
-						List<Agent> agents = new ArrayList<Agent>();
+					List<String> willTalks = new ArrayList<String>();
+					if(!result.isEmpty()){
 						for(Agent agent:result.keySet()){
-							if(result.get(agent).equals(Species.WEREWOLF) &&
-									voteTargets.contains(agent)){
-								agents.add(agent);
+							if(voteTargets.contains(agent)){
+								if(result.get(agent).equals(Species.WEREWOLF)){
+									String str = TemplateTalkFactory.estimate(agent, Role.WEREWOLF);
+									willTalks.add(str);
+								}else{
+									if(coMap.containsKey(agent)){
+										if(coMap.get(agent).equals(getMyRole())){
+											String str = TemplateTalkFactory.estimate(agent, Role.POSSESSED);
+											willTalks.add(str);
+										}else{
+											String str = TemplateTalkFactory.estimate(agent, coMap.get(agent));
+											willTalks.add(str);
+										}
+									}else{
+										String str = TemplateTalkFactory.estimate(agent, Role.VILLAGER);
+										willTalks.add(str);
+									}
+								}
 							}
 						}
-						if(!agents.isEmpty() && random.nextInt(10) < 8){
-							Agent agent = agents.get(random.nextInt(agents.size()));
-							return TemplateTalkFactory.vote(agent);
+					}
+					if(!estimated.isEmpty()){
+						for(Agent agent:estimated.keySet()){
+							if(voteTargets.contains(agent)){
+								if(estimated.get(agent).equals(FilterResult.INCREDIBLE)){
+									String str = TemplateTalkFactory.estimate(agent, Role.WEREWOLF);
+									willTalks.add(str);
+								}else{
+									if(coMap.containsKey(agent)){
+										if(coMap.get(agent).equals(getMyRole())){
+											String str = TemplateTalkFactory.estimate(agent, Role.POSSESSED);
+											willTalks.add(str);
+										}else{
+											String str = TemplateTalkFactory.estimate(agent, coMap.get(agent));
+											willTalks.add(str);
+										}
+									}else{
+										String str = TemplateTalkFactory.estimate(agent, Role.VILLAGER);
+										willTalks.add(str);
+									}
+								}
+							}
 						}
+					}
+					//順番に発表してゆく
+					for(String str:willTalks){
+						if(!publicResult.contains(str)){
+							return str;
+						}
+					}
+
+					//基本全て発表し終わったらもう一回だけどたまに他の発言も言うよ
+					if(!willTalks.isEmpty() && random.nextInt(10) < 7){
+						return willTalks.get(random.nextInt(willTalks.size()));
 					}
 					Agent agent = getProperVoteTarget();
 					return TemplateTalkFactory.vote(agent);
@@ -117,30 +155,45 @@ public class ChofuSeer extends ChofuBaseRole {
 					//ランダムで対象者を選ぶ
 					List<String> willTalks = new ArrayList<String>();	//発言候補のリスト
 					for(Agent target:result.keySet()){
-						if(alives.contains(target)){
+						if(alives.contains(target) && !target.equals(getMe())){
 							//対象者が生きている場合
 							if(result.get(target).equals(Species.WEREWOLF)){
 								//黒判定が出ていたらそれを公表
-								String str = TemplateTalkFactory.divined(target, Species.WEREWOLF);
-								willTalks.add(str);
+								if(divined.contains(target)){
+									String str = TemplateTalkFactory.divined(target, Species.WEREWOLF);
+									willTalks.add(str);
+								}else{
+									String str = TemplateTalkFactory.estimate(target, Role.WEREWOLF);
+									willTalks.add(str);
+								}
 							}else{
 								//白判定ならば公表する
-								String str = TemplateTalkFactory.divined(target, Species.HUMAN);
-								willTalks.add(str);
+								if(divined.contains(target)){
+									String str = TemplateTalkFactory.divined(target, Species.HUMAN);
+									willTalks.add(str);
+								}
 								//白判定ならばその人の申告していたカミングアウトを信じる
 								for(Talk talk:talkList){
 									Utterance utterance = new Utterance(talk.getContent());
 									if(utterance.getTopic().equals(Topic.COMINGOUT) && talk.getAgent().equals(target)){
-										String comingout = TemplateTalkFactory.estimate(target, utterance.getRole());
-										willTalks.add(comingout);
-										break;
+										if(!utterance.getRole().equals(getMyRole()) && gameSetting.getRoleNum(getMyRole()) == 1){
+											String comingout = TemplateTalkFactory.estimate(target, utterance.getRole());
+											willTalks.add(comingout);
+											break;
+										}else{
+											String comingout = TemplateTalkFactory.estimate(target, Role.POSSESSED);
+											willTalks.add(comingout);
+											break;
+										}
 									}
 								}
 							}
 						}else{
-							//死んでいる場合も結果として発表
-							String str = TemplateTalkFactory.divined(target, result.get(target));
-							willTalks.add(str);
+							//死んでいる場合は占った場合については発表するのだ
+							if(divined.contains(target)){
+								String str = TemplateTalkFactory.divined(target, result.get(target));
+								willTalks.add(str);
+							}
 						}
 					}
 					//発表していない項目から順に発表していくのである
@@ -164,11 +217,18 @@ public class ChofuSeer extends ChofuBaseRole {
 
 	@Override
 	public Agent vote() {
+
 		Map<Agent,Species> resultAlive = new HashMap<Agent,Species>();
+		Map<Agent,FilterResult> estimatedAlive = new HashMap<Agent,FilterResult>();
 
 		for(Agent agent : result.keySet()){
-			if(alives.contains(agent)){
+			if(voteTargets.contains(agent)){
 				resultAlive.put(agent, result.get(agent));
+			}
+		}
+		for(Agent agent : estimated.keySet()){
+			if(voteTargets.contains(agent)){
+				estimatedAlive.put(agent, estimated.get(agent));
 			}
 		}
 
@@ -177,6 +237,19 @@ public class ChofuSeer extends ChofuBaseRole {
 			List<Agent> agents = new ArrayList<Agent>();
 			for(Agent agent:resultAlive.keySet()){
 				if(resultAlive.get(agent).equals(Species.WEREWOLF)){
+					agents.add(agent);
+				}
+			}
+			if(!agents.isEmpty()){
+				return agents.get(random.nextInt(agents.size()));
+			}
+		}
+
+		//推定の結果に基づいて
+		if(estimatedAlive.containsValue(FilterResult.INCREDIBLE)){
+			List<Agent> agents = new ArrayList<Agent>();
+			for(Agent agent:estimatedAlive.keySet()){
+				if(estimatedAlive.get(agent).equals(FilterResult.INCREDIBLE)){
 					agents.add(agent);
 				}
 			}
@@ -203,22 +276,22 @@ public class ChofuSeer extends ChofuBaseRole {
 
 	@Override
 	public Agent divine() {
+
 		//まだ占っていなく，さらに疑惑のあるユーザーを優先的に．
 		List<Agent> agents = new ArrayList<Agent>();
 		for(Agent agent:voteTargets){
-			if(!alreadyDivine.contains(agent) && result.containsKey(agent)){
+			if(!divined.contains(agent) && result.containsKey(agent)){
 				agents.add(agent);
 			}
 		}
 		if(!agents.isEmpty()){
 			Agent agent = agents.get(random.nextInt(agents.size()));
-			alreadyDivine.add(agent);
 			return agent;
 		}
 
 		//まだ占っていない自称霊媒師
 		for(Agent agent:voteTargets){
-			if(!alreadyDivine.contains(agent) && coMap.containsKey(agent)){
+			if(!divined.contains(agent) && coMap.containsKey(agent)){
 				if(coMap.get(agent).equals(Role.MEDIUM)){
 					agents.add(agent);
 				}
@@ -226,18 +299,17 @@ public class ChofuSeer extends ChofuBaseRole {
 		}
 		if(!agents.isEmpty()){
 			Agent agent = agents.get(random.nextInt(agents.size()));
-			alreadyDivine.add(agent);
 			return agent;
 		}
 
-		//投票先として人気のあるエージェントを見てみよう
+		//投票先として,推定先として人気のあるエージェントの次に人気のあるエージェント
 		Map<Agent,Integer> doubt = new HashMap<Agent,Integer>();
 		for(Agent agent:voteTargets){
 			doubt.put(agent, 0);
 		}
 		for(Talk talk:todayTalkList){
 			Utterance utterance = new Utterance(talk.getContent());
-			if(utterance.getTopic().equals(Topic.VOTE) &&
+			if((utterance.getTopic().equals(Topic.VOTE) || utterance.getTopic().equals(Topic.ESTIMATE))&&
 					voteTargets.contains(utterance.getTarget())){
 				int voteNum = doubt.get(utterance.getTarget());
 				doubt.put(utterance.getTarget(),voteNum + 1);
@@ -246,32 +318,43 @@ public class ChofuSeer extends ChofuBaseRole {
 		List<Agent> maxes = new ArrayList<Agent>();
 		maxes.add(voteTargets.get(random.nextInt(voteTargets.size())));
 		for(Agent agent:doubt.keySet()){
-			if(doubt.get(agent) > doubt.get(maxes.get(0))){
-				maxes.clear();
-				maxes.add(agent);
-			}else if(doubt.get(agent) == doubt.get(maxes.get(0))){
-				maxes.add(agent);
+			if(!divined.contains(agent)){
+				if(doubt.get(agent) > doubt.get(maxes.get(0))){
+					maxes.clear();
+					maxes.add(agent);
+				}else if(doubt.get(agent) == doubt.get(maxes.get(0))){
+					maxes.add(agent);
+				}
 			}
 		}
-		for(Agent agent:alreadyDivine){
-			maxes.remove(agent);
+
+		List<Agent> maxes2 = new ArrayList<Agent>();
+		maxes2.add(voteTargets.get(random.nextInt(voteTargets.size())));
+		for(Agent agent:doubt.keySet()){
+			if(!divined.contains(agent) && !maxes.contains(agent)){
+				if(doubt.get(agent) > doubt.get(maxes2.get(0))){
+					maxes2.clear();
+					maxes2.add(agent);
+				}else if(doubt.get(agent) == doubt.get(maxes2.get(0))){
+					maxes2.add(agent);
+				}
+			}
 		}
 
-		if(!maxes.isEmpty()){
-			Agent agent = maxes.get(random.nextInt(maxes.size()));
-			alreadyDivine.add(agent);
+
+		if(!maxes2.isEmpty()){
+			Agent agent = maxes2.get(random.nextInt(maxes2.size()));
 			return agent;
 		}
 
 		//後は占ったことがない人をランダム
 		for(Agent agent:voteTargets){
-			if(!alreadyDivine.contains(agent)){
+			if(!divined.contains(agent)){
 				agents.add(agent);
 			}
 		}
 		if(!agents.isEmpty()){
 			Agent agent = agents.get(random.nextInt(agents.size()));
-			alreadyDivine.add(agent);
 			return agent;
 		}
 
